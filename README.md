@@ -100,6 +100,8 @@ This information overload results in:
 ### 🧠 AI-Powered Analysis
 ![AI Analysis](screenshots/ai-llm-processing.png)
 - **LLM-based threat summarization** using Groq API
+  - Model: `meta-llama/llama-4-scout-17b-16e-instruct` (Meta Llama 4 Scout)
+  - High-performance inference for real-time threat analysis
 - **Custom priority scoring** based on organizational context
 - **Automated threat classification** and risk assessment
 - **Intelligent deduplication** and correlation
@@ -131,6 +133,7 @@ This information overload results in:
 
 ### AI & Machine Learning
 - **Groq API** - LLM for threat analysis and summarization
+  - Model: `meta-llama/llama-4-scout-17b-16e-instruct`
 - **LangChain** - AI workflow orchestration
 - **OpenAI API** - Alternative LLM provider
 
@@ -291,7 +294,7 @@ GET /                      # Server status and information
 
 #### 3. **AI Analysis Phase**
 - **Batch Processing** → Split large datasets for efficient processing
-- **LLM Integration** → Groq API for threat analysis
+- **LLM Integration** → Groq API with `meta-llama/llama-4-scout-17b-16e-instruct`
 - **Intelligent Summarization** → Generate concise threat descriptions
 - **Risk Classification** → Automated priority level assignment
 - **JSON Extraction** → Parse LLM responses into structured data
