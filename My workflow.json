@@ -1,0 +1,1476 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "bc86a370-186a-4fa3-9029-fe12c009e30b",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2880,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { startTime: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), endTime: new Date().toISOString() } }];"
+      },
+      "id": "57b3be0b-b38a-4f97-9aec-889f22ba5e3b",
+      "name": "Set Time Range",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -2640,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://services.nvd.nist.gov/rest/json/cves/2.0",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "lastModStartDate",
+              "value": "={{ $json.startTime }}"
+            },
+            {
+              "name": "lastModEndDate",
+              "value": "={{ $json.endTime }}"
+            },
+            {
+              "name": "resultsPerPage",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "1b7d21d1-e4d7-4db4-99c2-3795e9175277",
+      "name": "Fetch NVD CVEs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2176,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://vuldb.com/?api",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "670f692409ecbb8ce885cd2af5073dc0"
+            },
+            {
+              "name": "recent",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "56a94b08-9971-47d3-b14e-c916ec1e543e",
+      "name": "Fetch VulDB Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2176,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5001/api/cves",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "17e4deb2-600e-43d8-894a-271498b16b88",
+      "name": "Fetch CVEFind Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2176,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5000/api/cves",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "889e2994-21bc-4754-8189-53798f185342",
+      "name": "Fetch OpenCVE Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2176,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Store raw NVD data without processing\nconst nvdData = $input.first().json;\n\nreturn [{ json: { source: 'NVD', data: nvdData, fetched_at: new Date().toISOString() } }];"
+      },
+      "id": "8d46f5d5-33fe-4ed5-8714-b070b8b50ab1",
+      "name": "Process NVD Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2000,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Store raw VulDB data without processing\nconst vuldbData = $input.first().json;\n\nreturn [{ json: { source: 'VulDB', data: vuldbData, fetched_at: new Date().toISOString() } }];"
+      },
+      "id": "9c468947-71ec-4c0a-914a-5f897579c1d6",
+      "name": "Process VulDB Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2000,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process CVEFind data\nconst cvefindData = $input.first().json;\n\nreturn [{ json: { source: 'CVEFind', data: cvefindData, fetched_at: new Date().toISOString() } }];"
+      },
+      "id": "c5fe8d3d-a73a-4852-ba10-02fde085443d",
+      "name": "Process CVEFind Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2000,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process OpenCVE data\n//const opencveData = $input.first().json;\nconst opencveData = [];\nreturn [{ json: { source: 'OpenCVE', data: opencveData, fetched_at: new Date().toISOString() } }];"
+      },
+      "id": "ec88d452-f947-4c70-aa0a-515a9db69494",
+      "name": "Process OpenCVE Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1984,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "625846a5-890c-4fe2-b7bc-6cf9e6f491e0",
+      "name": "Merge with VulDB",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -1744,
+        -64
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "bd7550c6-d0b2-4942-8f70-816fceb1643c",
+      "name": "Merge with CVEFind",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -1536,
+        128
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ee75d115-d711-4833-8d94-ab4d81210204",
+      "name": "Merge with OpenCVE",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -1312,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all processed sources\nconst allSources = $input.all();\nconst result = {};\n\n// Build the final structure with separate sources\nallSources.forEach(item => {\n  const sourceData = item.json;\n  const sourceName = sourceData.source;\n  \n  // Use the source name as key and the data array as value\n  result[sourceName] = sourceData.data || [];\n});\n\n// Add metadata\nresult.metadata = {\n  generated_at: new Date().toISOString(),\n  total_sources: allSources.length,\n  source_counts: {}\n};\n\n// Add count for each source\nallSources.forEach(item => {\n  const sourceData = item.json;\n  result.metadata.source_counts[sourceData.source] = sourceData.count || 0;\n});\n\nreturn [{ json: result }];"
+      },
+      "id": "f7edb4a5-592c-4ab4-8b36-9802eb44b87e",
+      "name": "Create Final Structure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1040,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// CVE Deduplicator for n8n workflow\n// This code should be placed in a Code node after \"Create Final Structure\"\n\nconst inputData = $input.first().json;\n\n// Helper functions for extracting CVE IDs\nfunction extractCveIdFromNvd(vuln) {\n  return vuln?.cve?.id;\n}\n\nfunction extractCveIdFromVuldb(entry) {\n  return entry?.source?.cve?.id;\n}\n\nfunction extractCveIdFromCvefind(entry) {\n  return entry?.id;\n}\n\nfunction extractCveIdFromOpencve(entry) {\n  return entry?.cve_id;\n}\n\n// Normalization functions\nfunction normalizeNvdCve(vuln) {\n  const cveData = vuln?.cve || {};\n  \n  // Extract CVSS data\n  let cvssData = {};\n  const metrics = cveData?.metrics || {};\n  if (metrics.cvssMetricV31 && metrics.cvssMetricV31.length > 0) {\n    const primaryCvss = metrics.cvssMetricV31.find(m => m.type === \"Primary\") || metrics.cvssMetricV31[0];\n    const cvssInfo = primaryCvss?.cvssData || {};\n    cvssData = {\n      version: cvssInfo.version,\n      vector: cvssInfo.vectorString,\n      score: cvssInfo.baseScore,\n      severity: cvssInfo.baseSeverity\n    };\n  }\n  \n  // Extract description\n  const descriptions = cveData?.descriptions || [];\n  let description = \"\";\n  if (descriptions.length > 0) {\n    const enDesc = descriptions.find(d => d.lang === \"en\") || descriptions[0];\n    description = enDesc?.value || \"\";\n  }\n  \n  // Extract CWE information\n  const cweList = [];\n  const weaknesses = cveData?.weaknesses || [];\n  weaknesses.forEach(weakness => {\n    weakness?.description?.forEach(desc => {\n      if (desc.lang === \"en\" && desc.value) {\n        cweList.push(desc.value);\n      }\n    });\n  });\n  \n  // Extract affected products/configurations\n  const affectedProducts = [];\n  const configurations = cveData?.configurations || [];\n  configurations.forEach(config => {\n    config?.nodes?.forEach(node => {\n      node?.cpeMatch?.forEach(cpeMatch => {\n        const cpeName = cpeMatch?.criteria || \"\";\n        if (cpeName.startsWith(\"cpe:2.3:\")) {\n          const parts = cpeName.split(\":\");\n          if (parts.length >= 6) {\n            const vendor = parts[3] !== \"*\" ? parts[3] : \"unknown\";\n            const product = parts[4] !== \"*\" ? parts[4] : \"unknown\";\n            const version = parts[5] !== \"*\" ? parts[5] : \"unknown\";\n            \n            const productEntry = { vendor, product, version };\n            if (!affectedProducts.some(p => JSON.stringify(p) === JSON.stringify(productEntry))) {\n              affectedProducts.push(productEntry);\n            }\n          }\n        }\n      });\n    });\n  });\n  \n  // Extract references\n  const references = [];\n  (cveData?.references || []).forEach(ref => {\n    if (ref?.url) {\n      references.push(ref.url);\n    }\n  });\n  \n  // Check for exploit availability\n  let exploitAvailable = false;\n  (cveData?.references || []).forEach(ref => {\n    const tags = ref?.tags || [];\n    if (tags.some(tag => [\"exploit\", \"exploit-db\", \"poc\"].includes(tag.toLowerCase()))) {\n      exploitAvailable = true;\n    }\n  });\n  \n  // Generate tags\n  const tags = [];\n  const descLower = description.toLowerCase();\n  if (descLower.includes(\"idor\") || descLower.includes(\"insecure direct object reference\")) {\n    tags.push(\"idor\");\n  }\n  if (descLower.includes(\"access control\") || descLower.includes(\"authorization\")) {\n    tags.push(\"access-control\");\n  }\n  if (descLower.includes(\"sql injection\")) {\n    tags.push(\"sql-injection\");\n  }\n  if (descLower.includes(\"xss\") || descLower.includes(\"cross-site scripting\")) {\n    tags.push(\"xss\");\n  }\n  if (descLower.includes(\"csrf\") || descLower.includes(\"cross-site request forgery\")) {\n    tags.push(\"csrf\");\n  }\n  \n  // Add product names as tags\n  affectedProducts.forEach(product => {\n    const productName = product.product?.toLowerCase();\n    if (productName && productName !== \"unknown\") {\n      tags.push(productName);\n    }\n  });\n  \n  return {\n    cve_id: cveData.id,\n    published_date: cveData.published,\n    last_modified: cveData.lastModified,\n    source: \"NVD\",\n    description,\n    cvss: cvssData,\n    cwe: cweList,\n    affected_products: affectedProducts,\n    references,\n    exploit_available: exploitAvailable,\n    tags\n  };\n}\n\nfunction normalizeVuldbCve(entry) {\n  const entryData = entry?.entry || {};\n  const vulnerability = entry?.vulnerability || {};\n  const risk = vulnerability?.risk || {};\n  const advisory = entry?.advisory || {};\n  \n  // Convert timestamps\n  let publishedDate = null;\n  let lastModified = null;\n  \n  if (advisory.date) {\n    try {\n      publishedDate = new Date(parseInt(advisory.date) * 1000).toISOString();\n    } catch (e) {\n      publishedDate = null;\n    }\n  }\n  \n  const timestamp = entryData?.timestamp || {};\n  if (timestamp.change) {\n    try {\n      lastModified = new Date(parseInt(timestamp.change) * 1000).toISOString();\n    } catch (e) {\n      lastModified = null;\n    }\n  }\n  \n  // Parse title for product info\n  const title = entryData?.title || \"\";\n  const affectedProducts = [];\n  \n  if (title) {\n    const parts = title.split(\" \");\n    const versionIndicators = [\"prior\", \"up\", \"to\", \"version\", \"v\", \"before\"];\n    \n    let vendor = \"\";\n    let product = \"\";\n    let version = \"\";\n    \n    for (let i = 0; i < parts.length; i++) {\n      if (versionIndicators.includes(parts[i].toLowerCase()) && i + 1 < parts.length) {\n        const vendorProduct = parts.slice(0, i).join(\" \");\n        version = parts[i + 1];\n        \n        const vpParts = vendorProduct.split(\" \");\n        if (vpParts.length >= 2) {\n          vendor = vpParts[0];\n          product = vpParts.slice(1).join(\" \");\n        } else {\n          vendor = \"unknown\";\n          product = vendorProduct;\n        }\n        break;\n      }\n    }\n    \n    if (!vendor && !product && parts.length >= 2) {\n      vendor = parts[0];\n      product = parts[1];\n      version = \"unknown\";\n    }\n    \n    if (vendor || product) {\n      affectedProducts.push({\n        vendor: vendor || \"unknown\",\n        product: product || \"unknown\",\n        version: version || \"unknown\"\n      });\n    }\n  }\n  \n  // Generate tags\n  const tags = [];\n  const titleLower = title.toLowerCase();\n  \n  if (titleLower.includes(\"cross site scripting\") || titleLower.includes(\"xss\")) {\n    tags.push(\"xss\");\n  }\n  if (titleLower.includes(\"sql injection\")) {\n    tags.push(\"sql-injection\");\n  }\n  if (titleLower.includes(\"command injection\")) {\n    tags.push(\"command-injection\");\n  }\n  if (titleLower.includes(\"unrestricted upload\") || titleLower.includes(\"file upload\")) {\n    tags.push(\"unrestricted-upload\");\n  }\n  if (titleLower.includes(\"csrf\")) {\n    tags.push(\"csrf\");\n  }\n  \n  return {\n    cve_id: extractCveIdFromVuldb(entry),\n    published_date: publishedDate,\n    last_modified: lastModified,\n    source: \"VulDB\",\n    description: title,\n    cvss: {\n      version: null,\n      vector: null,\n      score: null,\n      severity: risk?.name?.toLowerCase() || \"unknown\"\n    },\n    cwe: [],\n    affected_products: affectedProducts,\n    references: [],\n    exploit_available: false,\n    tags\n  };\n}\n\nfunction normalizeCvefindCve(entry) {\n  const references = [];\n  (entry?.references || []).forEach(ref => {\n    if (typeof ref === \"object\" && ref?.url) {\n      references.push(ref.url);\n    } else if (typeof ref === \"string\") {\n      references.push(ref);\n    }\n  });\n  \n  return {\n    cve_id: entry?.id,\n    published_date: entry?.published,\n    last_modified: entry?.lastModified,\n    source: \"CVEFind\",\n    description: entry?.description || \"\",\n    cvss: {\n      version: entry?.cvssVersion,\n      score: entry?.baseScore ? parseFloat(entry.baseScore) : null,\n      attack_vector: entry?.attackVector,\n      attack_complexity: entry?.attackComplexity\n    },\n    cwe: [],\n    affected_products: [],\n    references,\n    exploit_available: false,\n    tags: []\n  };\n}\n\nfunction normalizeOpencveCve(entry) {\n  const references = [];\n  if (entry?.cve_url) {\n    references.push(entry.cve_url);\n  }\n\n  // Extract affected products from products and vendors arrays\n  const affectedProducts = [];\n  const products = entry?.products || [];\n  const vendors = entry?.vendors || [];\n\n  // Create product entries by combining vendors and products\n  if (vendors.length > 0 && products.length > 0) {\n    vendors.forEach(vendor => {\n      products.forEach(product => {\n        affectedProducts.push({\n          vendor: vendor,\n          product: product,\n          version: \"unknown\"\n        });\n      });\n    });\n  } else if (products.length > 0) {\n    // If only products, use \"unknown\" vendor\n    products.forEach(product => {\n      affectedProducts.push({\n        vendor: \"unknown\",\n        product: product,\n        version: \"unknown\"\n      });\n    });\n  } else if (vendors.length > 0) {\n    // If only vendors, use vendor as product\n    vendors.forEach(vendor => {\n      affectedProducts.push({\n        vendor: vendor,\n        product: \"unknown\",\n        version: \"unknown\"\n      });\n    });\n  }\n\n  // Generate tags from summary and products\n  const tags = [];\n  const summary = (entry?.summary || \"\").toLowerCase();\n\n  if (summary.includes(\"cross-site request forgery\") || summary.includes(\"csrf\")) {\n    tags.push(\"csrf\");\n  }\n  if (summary.includes(\"cross-site scripting\") || summary.includes(\"xss\")) {\n    tags.push(\"xss\");\n  }\n  if (summary.includes(\"sql injection\")) {\n    tags.push(\"sql-injection\");\n  }\n  if (summary.includes(\"denial of service\") || summary.includes(\"dos\")) {\n    tags.push(\"dos\");\n  }\n  if (summary.includes(\"access control\") || summary.includes(\"authorization\")) {\n    tags.push(\"access-control\");\n  }\n  if (summary.includes(\"idor\") || summary.includes(\"insecure direct object reference\")) {\n    tags.push(\"idor\");\n  }\n  if (summary.includes(\"remote code execution\") || summary.includes(\"rce\")) {\n    tags.push(\"rce\");\n  }\n\n  // Add product names as tags\n  products.forEach(product => {\n    if (product && product.toLowerCase() !== \"unknown\") {\n      tags.push(product.toLowerCase());\n    }\n  });\n\n  return {\n    cve_id: entry?.cve_id,\n    published_date: entry?.updated_date ? entry.updated_date + \"T00:00:00Z\" : null,\n    last_modified: entry?.updated_date ? entry.updated_date + \"T00:00:00Z\" : null,\n    source: \"OpenCVE\",\n    description: entry?.summary || \"\",\n    cvss: {\n      version: null,\n      vector: null,\n      score: entry?.cvss_score,\n      severity: entry?.cvss_severity\n    },\n    cwe: [],\n    affected_products: affectedProducts,\n    references,\n    exploit_available: false,\n    tags,\n    products: entry?.products || [],\n    vendors: entry?.vendors || []\n  };\n}\n\n// Main processing function\nfunction processCveData(data) {\n  const allCves = {};\n  \n  // Process NVD data\n  if (data.NVD && data.NVD.vulnerabilities) {\n    data.NVD.vulnerabilities.forEach(vuln => {\n      const cveId = extractCveIdFromNvd(vuln);\n      if (cveId) {\n        const normalized = normalizeNvdCve(vuln);\n        if (!allCves[cveId]) {\n          allCves[cveId] = normalized;\n        } else {\n          allCves[cveId].sources = allCves[cveId].sources || [allCves[cveId].source];\n          allCves[cveId].sources.push(\"NVD\");\n        }\n      }\n    });\n  }\n  \n  // Process VulDB data\n  if (data.VulDB && data.VulDB.result) {\n    data.VulDB.result.forEach(entry => {\n      const cveId = extractCveIdFromVuldb(entry);\n      if (cveId) {\n        const normalized = normalizeVuldbCve(entry);\n        if (!allCves[cveId]) {\n          allCves[cveId] = normalized;\n        } else {\n          allCves[cveId].sources = allCves[cveId].sources || [allCves[cveId].source];\n          allCves[cveId].sources.push(\"VulDB\");\n        }\n      }\n    });\n  }\n  \n  // Process CVEFind data\n  if (data.CVEFind && data.CVEFind.data) {\n    data.CVEFind.data.forEach(entry => {\n      const cveId = extractCveIdFromCvefind(entry);\n      if (cveId) {\n        const normalized = normalizeCvefindCve(entry);\n        if (!allCves[cveId]) {\n          allCves[cveId] = normalized;\n        } else {\n          allCves[cveId].sources = allCves[cveId].sources || [allCves[cveId].source];\n          allCves[cveId].sources.push(\"CVEFind\");\n        }\n      }\n    });\n  }\n  \n  // Process OpenCVE data\n  if (data.OpenCVE && data.OpenCVE.cves) {\n    data.OpenCVE.cves.forEach(entry => {\n      const cveId = extractCveIdFromOpencve(entry);\n      if (cveId) {\n        const normalized = normalizeOpencveCve(entry);\n        if (!allCves[cveId]) {\n          allCves[cveId] = normalized;\n        } else {\n          allCves[cveId].sources = allCves[cveId].sources || [allCves[cveId].source];\n          allCves[cveId].sources.push(\"OpenCVE\");\n        }\n      }\n    });\n  }\n  \n  return allCves;\n}\n\n// Process the data\nconst deduplicatedCves = processCveData(inputData);\n\n// Count sources\nconst sourceCounts = {};\nObject.values(deduplicatedCves).forEach(cve => {\n  const sources = cve.sources || [cve.source];\n  sources.forEach(source => {\n    sourceCounts[source] = (sourceCounts[source] || 0) + 1;\n  });\n});\n\n// Create output structure\nconst output = {\n  metadata: {\n    generated_at: new Date().toISOString(),\n    total_unique_cves: Object.keys(deduplicatedCves).length,\n    original_sources: [\"NVD\", \"VulDB\", \"CVEFind\", \"OpenCVE\"],\n    deduplication_method: \"CVE ID based\",\n    source_counts: sourceCounts\n  },\n  cves: Object.values(deduplicatedCves)\n};\n\nconsole.log(`✅ Successfully processed ${Object.keys(deduplicatedCves).length} unique CVEs`);\nconsole.log(\"📊 Source distribution:\", sourceCounts);\n\n// Prepare for file download with binary data\nconst jsonContent = JSON.stringify(output, null, 2);\nconst timestamp = new Date().toISOString().replace(/[:]/g, '-').replace(/[.]\\d+Z/, '');\nconst fileName = `deduplicated-cves-${timestamp}.json`;\n\nconst fileSizeBytes = Buffer.byteLength(jsonContent, 'utf8');\nconst fileSizeKB = (fileSizeBytes / 1024).toFixed(2);\n\nreturn [{\n  json: {\n    // This is the data you'll pass to the LLM\n    cves: Object.values(deduplicatedCves),  // The actual deduplicated CVEs\n    metadata: {\n      total_unique_cves: Object.keys(deduplicatedCves).length,\n      source_distribution: sourceCounts,\n      generated_at: new Date().toISOString()\n    },\n    \n    // Keep the download info if you still need it\n    downloadInfo: {\n      file_size_bytes: fileSizeBytes,\n      file_size_kb: fileSizeKB + ' KB',\n      generated_at: new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        176
+      ],
+      "id": "c5f48d0c-2a42-4b15-971f-485215239252",
+      "name": "get all cve filtered"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Improved CVE Priority Scoring Script for n8n workflow\n// This version provides better balanced scoring with weighted calculations\n\nconst inputData = $input.first().json;\n\n// Enhanced Configuration with better weighting\nconst SCORING_CONFIG = {\n  // Technology products with refined scoring (0-100 scale)\n  TECHNOLOGY_PRODUCTS: {\n    // Critical Infrastructure (90-100)\n    'active directory': { score: 100, category: 'identity_management', weight: 1.0 },\n    'swift': { score: 100, category: 'banking_infrastructure', weight: 1.0 },\n    'vcenter': { score: 95, category: 'virtualization', weight: 0.9 },\n    'esxi': { score: 95, category: 'hypervisor', weight: 0.9 },\n    'fortinet': { score: 95, category: 'network_security', weight: 0.9 },\n    'fortigate': { score: 95, category: 'network_security', weight: 0.9 },\n    'temenos': { score: 95, category: 'banking_software', weight: 0.9 },\n    'finastra': { score: 90, category: 'banking_software', weight: 0.8 },\n    'palo alto': { score: 90, category: 'network_security', weight: 0.8 },\n    'azure': { score: 90, category: 'cloud_platform', weight: 0.8 },\n    'vmware': { score: 90, category: 'virtualization', weight: 0.8 },\n\n    // High Priority (75-89)\n    'cisco': { score: 85, category: 'network_infrastructure', weight: 0.7 },\n    'microsoft': { score: 85, category: 'enterprise_software', weight: 0.7 },\n    'exchange': { score: 85, category: 'email_system', weight: 0.7 },\n    'checkpoint': { score: 85, category: 'network_security', weight: 0.7 },\n    'oracle': { score: 85, category: 'database', weight: 0.7 },\n    'hyper-v': { score: 85, category: 'hypervisor', weight: 0.7 },\n    'sap': { score: 85, category: 'erp_system', weight: 0.7 },\n    'windows': { score: 80, category: 'operating_system', weight: 0.6 },\n    'sharepoint': { score: 80, category: 'collaboration', weight: 0.6 },\n    'citrix': { score: 80, category: 'virtualization', weight: 0.6 },\n    'juniper': { score: 80, category: 'network_infrastructure', weight: 0.6 },\n    'ibm': { score: 80, category: 'enterprise_infrastructure', weight: 0.6 },\n    'iis': { score: 75, category: 'web_server', weight: 0.5 },\n    'f5': { score: 75, category: 'network_infrastructure', weight: 0.5 },\n    'office': { score: 75, category: 'productivity', weight: 0.5 },\n    'apache': { score: 75, category: 'web_server', weight: 0.5 },\n    'nginx': { score: 75, category: 'web_server', weight: 0.5 },\n\n    // Medium Priority (50-74)\n    'tomcat': { score: 70, category: 'application_server', weight: 0.4 },\n    'mysql': { score: 65, category: 'database', weight: 0.4 },\n    'postgresql': { score: 65, category: 'database', weight: 0.4 },\n    'mongodb': { score: 60, category: 'database', weight: 0.3 },\n    'redis': { score: 55, category: 'database', weight: 0.3 },\n\n    // Lower Priority (25-49)\n    'linux': { score: 40, category: 'operating_system', weight: 0.2 },\n    'ubuntu': { score: 35, category: 'operating_system', weight: 0.2 },\n    'centos': { score: 35, category: 'operating_system', weight: 0.2 },\n    'debian': { score: 35, category: 'operating_system', weight: 0.2 }\n  },\n\n  // Vulnerability types with impact weighting\n  VULNERABILITY_TYPES: {\n    'remote code execution': { score: 100, weight: 1.0, impact: 'critical' },\n    'rce': { score: 100, weight: 1.0, impact: 'critical' },\n    'code execution': { score: 95, weight: 0.95, impact: 'critical' },\n    'authentication bypass': { score: 95, weight: 0.9, impact: 'critical' },\n    'privilege escalation': { score: 90, weight: 0.85, impact: 'high' },\n    'sql injection': { score: 85, weight: 0.8, impact: 'high' },\n    'command injection': { score: 85, weight: 0.8, impact: 'high' },\n    'buffer overflow': { score: 80, weight: 0.75, impact: 'high' },\n    'directory traversal': { score: 75, weight: 0.7, impact: 'medium' },\n    'xxe': { score: 75, weight: 0.7, impact: 'medium' },\n    'ssrf': { score: 70, weight: 0.65, impact: 'medium' },\n    'xss': { score: 60, weight: 0.5, impact: 'medium' },\n    'cross-site scripting': { score: 60, weight: 0.5, impact: 'medium' },\n    'csrf': { score: 55, weight: 0.45, impact: 'medium' },\n    'idor': { score: 65, weight: 0.55, impact: 'medium' },\n    'information disclosure': { score: 50, weight: 0.4, impact: 'low' },\n    'dos': { score: 30, weight: 0.2, impact: 'low' },\n    'denial of service': { score: 30, weight: 0.2, impact: 'low' },\n    'open redirect': { score: 25, weight: 0.15, impact: 'low' }\n  },\n\n  // CVSS score ranges with proper weighting\n  CVSS_SCORING: {\n    9.0: { multiplier: 1.5, level: 'critical' },\n    7.0: { multiplier: 1.3, level: 'high' },\n    4.0: { multiplier: 1.0, level: 'medium' },\n    0.0: { multiplier: 0.7, level: 'low' }\n  },\n\n  // Exploit availability impact\n  EXPLOIT_FACTORS: {\n    public_exploit: { multiplier: 1.4, description: 'Public exploit available' },\n    poc_available: { multiplier: 1.2, description: 'Proof of concept available' },\n    no_exploit: { multiplier: 1.0, description: 'No known exploit' }\n  },\n\n  // Age of vulnerability (newer = higher priority)\n  AGE_FACTORS: {\n    0: { multiplier: 1.3, description: 'Published today' },      // 0-1 days\n    7: { multiplier: 1.2, description: 'Published this week' },   // 1-7 days\n    30: { multiplier: 1.1, description: 'Published this month' }, // 7-30 days\n    90: { multiplier: 1.0, description: 'Published recently' },   // 30-90 days\n    365: { multiplier: 0.9, description: 'Published this year' }, // 90-365 days\n    999999: { multiplier: 0.8, description: 'Older vulnerability' } // >365 days\n  },\n\n  // Geographic relevance\n  GEOGRAPHIC_FACTORS: {\n    'morocco': 1.2,\n    'maroc': 1.2,\n    'africa': 1.1,\n    'emea': 1.1,\n    'global': 1.0\n  },\n\n  // Sector criticality\n  SECTOR_MULTIPLIERS: {\n    'banking': 1.3,\n    'financial': 1.3,\n    'government': 1.25,\n    'healthcare': 1.2,\n    'critical_infrastructure': 1.15,\n    'enterprise': 1.0\n  }\n};\n\n// Helper function to get CVSS multiplier based on score range\nfunction getCvssMultiplier(cvssScore) {\n  if (!cvssScore || cvssScore === null) return 0.8;\n  \n  const scoreRanges = Object.keys(SCORING_CONFIG.CVSS_SCORING)\n    .map(Number)\n    .sort((a, b) => b - a);\n  \n  for (const threshold of scoreRanges) {\n    if (cvssScore >= threshold) {\n      return SCORING_CONFIG.CVSS_SCORING[threshold].multiplier;\n    }\n  }\n  \n  return 0.5; // Very low score\n}\n\n// Helper function to calculate age multiplier\nfunction getAgeMultiplier(publishedDate) {\n  if (!publishedDate) return 1.0;\n  \n  const now = new Date();\n  const published = new Date(publishedDate);\n  const daysDiff = Math.floor((now - published) / (1000 * 60 * 60 * 24));\n  \n  const ageThresholds = Object.keys(SCORING_CONFIG.AGE_FACTORS)\n    .map(Number)\n    .sort((a, b) => a - b);\n  \n  for (const threshold of ageThresholds) {\n    if (daysDiff <= threshold) {\n      return SCORING_CONFIG.AGE_FACTORS[threshold].multiplier;\n    }\n  }\n  \n  return 0.8; // Very old\n}\n\n// Enhanced technology scoring with better matching\nfunction calculateTechnologyScore(cve) {\n  let maxScore = 0;\n  let totalWeightedScore = 0;\n  let totalWeight = 0;\n  let matchedProducts = [];\n  let categories = new Set();\n\n  const searchText = [\n    cve.description || '',\n    ...(cve.affected_products?.map(p => `${p.vendor} ${p.product}`) || []),\n    ...(cve.tags || [])\n  ].join(' ').toLowerCase();\n\n  // More intelligent matching\n  Object.entries(SCORING_CONFIG.TECHNOLOGY_PRODUCTS).forEach(([tech, config]) => {\n    const techWords = tech.split(' ');\n    let matchScore = 0;\n    let matchLocation = [];\n\n    // Exact phrase match gets full score\n    if (searchText.includes(tech)) {\n      matchScore = config.score;\n      matchLocation.push('exact_match');\n    } \n    // Partial word matching for compound terms\n    else if (techWords.length > 1 && techWords.every(word => searchText.includes(word))) {\n      matchScore = config.score * 0.8; // 80% for partial match\n      matchLocation.push('partial_match');\n    }\n    // Single word match with context\n    else if (techWords.length === 1 && searchText.includes(tech)) {\n      // Check for context to avoid false positives\n      const regex = new RegExp(`\\\\b${tech}\\\\b`, 'i');\n      if (regex.test(searchText)) {\n        matchScore = config.score * 0.9; // 90% for single word with context\n        matchLocation.push('word_boundary_match');\n      }\n    }\n\n    if (matchScore > 0) {\n      maxScore = Math.max(maxScore, matchScore);\n      totalWeightedScore += matchScore * config.weight;\n      totalWeight += config.weight;\n      \n      matchedProducts.push({\n        technology: tech,\n        score: matchScore,\n        weight: config.weight,\n        category: config.category,\n        match_type: matchLocation.join(', ')\n      });\n      categories.add(config.category);\n    }\n  });\n\n  // Calculate weighted average for more balanced scoring\n  const weightedScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;\n  const finalScore = Math.min(100, Math.max(maxScore * 0.6 + weightedScore * 0.4, maxScore));\n\n  return {\n    score: Math.round(finalScore),\n    max_score: Math.round(maxScore),\n    weighted_score: Math.round(weightedScore),\n    matched_products: matchedProducts,\n    categories: Array.from(categories)\n  };\n}\n\n// Enhanced vulnerability type scoring\nfunction calculateVulnerabilityScore(cve) {\n  let maxScore = 0;\n  let totalWeightedScore = 0;\n  let totalWeight = 0;\n  let matchedTypes = [];\n\n  const searchText = [\n    cve.description || '',\n    ...(cve.tags || []),\n    ...(cve.cwe?.map(c => c.toLowerCase()) || [])\n  ].join(' ').toLowerCase();\n\n  Object.entries(SCORING_CONFIG.VULNERABILITY_TYPES).forEach(([vulnType, config]) => {\n    if (searchText.includes(vulnType)) {\n      maxScore = Math.max(maxScore, config.score);\n      totalWeightedScore += config.score * config.weight;\n      totalWeight += config.weight;\n      \n      matchedTypes.push({\n        type: vulnType,\n        score: config.score,\n        weight: config.weight,\n        impact: config.impact\n      });\n    }\n  });\n\n  const weightedScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;\n  const finalScore = Math.min(100, Math.max(maxScore * 0.7 + weightedScore * 0.3, maxScore));\n\n  return {\n    score: Math.round(finalScore),\n    max_score: Math.round(maxScore),\n    weighted_score: Math.round(weightedScore),\n    matched_types: matchedTypes\n  };\n}\n\n// Enhanced sector analysis\nfunction calculateSectorMultiplier(categories) {\n  let maxMultiplier = 1.0;\n  let appliedSector = 'enterprise';\n\n  // Banking/Financial gets highest priority\n  if (categories.includes('banking_infrastructure') || categories.includes('banking_software')) {\n    maxMultiplier = SCORING_CONFIG.SECTOR_MULTIPLIERS.banking;\n    appliedSector = 'banking';\n  }\n  // Identity management is critical for all sectors\n  else if (categories.includes('identity_management')) {\n    maxMultiplier = SCORING_CONFIG.SECTOR_MULTIPLIERS.government;\n    appliedSector = 'government';\n  }\n  // Network security infrastructure\n  else if (categories.includes('network_security')) {\n    maxMultiplier = SCORING_CONFIG.SECTOR_MULTIPLIERS.critical_infrastructure;\n    appliedSector = 'critical_infrastructure';\n  }\n  // Hypervisors and virtualization\n  else if (categories.includes('hypervisor') || categories.includes('virtualization')) {\n    maxMultiplier = SCORING_CONFIG.SECTOR_MULTIPLIERS.critical_infrastructure;\n    appliedSector = 'critical_infrastructure';\n  }\n\n  return {\n    multiplier: maxMultiplier,\n    sector: appliedSector\n  };\n}\n\n// Main priority calculation with improved algorithm\nfunction calculatePriorityScore(cve) {\n  // Base component scores (0-100)\n  const techAnalysis = calculateTechnologyScore(cve);\n  const vulnAnalysis = calculateVulnerabilityScore(cve);\n  \n  // Calculate base score with proper weighting\n  // Technology relevance: 40%, Vulnerability severity: 60%\n  let baseScore = 0;\n  \n  if (techAnalysis.score > 0 && vulnAnalysis.score > 0) {\n    // Both technology and vulnerability identified\n    baseScore = (techAnalysis.score * 0.4) + (vulnAnalysis.score * 0.6);\n  } else if (techAnalysis.score > 0) {\n    // Only technology identified\n    baseScore = techAnalysis.score * 0.7; // Reduced impact\n  } else if (vulnAnalysis.score > 0) {\n    // Only vulnerability type identified\n    baseScore = vulnAnalysis.score * 0.5; // Significantly reduced\n  } else {\n    // Neither identified - use CVSS as fallback\n    const cvssScore = cve.cvss?.score || 0;\n    baseScore = Math.min(40, cvssScore * 4); // Cap at 40 for unknown tech/vuln\n  }\n\n  // Apply multipliers\n  const cvssMultiplier = getCvssMultiplier(cve.cvss?.score);\n  const ageMultiplier = getAgeMultiplier(cve.published_date);\n  const sectorAnalysis = calculateSectorMultiplier(techAnalysis.categories);\n  \n  // Exploit availability multiplier\n  let exploitMultiplier = SCORING_CONFIG.EXPLOIT_FACTORS.no_exploit.multiplier;\n  if (cve.exploit_available) {\n    exploitMultiplier = SCORING_CONFIG.EXPLOIT_FACTORS.public_exploit.multiplier;\n  }\n\n  // Geographic multiplier (default to global)\n  let geoMultiplier = 1.0;\n  const description = (cve.description || '').toLowerCase();\n  Object.entries(SCORING_CONFIG.GEOGRAPHIC_FACTORS).forEach(([region, multiplier]) => {\n    if (description.includes(region)) {\n      geoMultiplier = Math.max(geoMultiplier, multiplier);\n    }\n  });\n\n  // Final score calculation\n  const finalScore = Math.min(100, Math.round(\n    baseScore * \n    cvssMultiplier * \n    ageMultiplier * \n    sectorAnalysis.multiplier * \n    exploitMultiplier * \n    geoMultiplier\n  ));\n\n  // Determine priority level with better thresholds\n  let priorityLevel;\n  if (finalScore >= 85) priorityLevel = 'CRITICAL';\n  else if (finalScore >= 65) priorityLevel = 'HIGH';\n  else if (finalScore >= 40) priorityLevel = 'MEDIUM';\n  else priorityLevel = 'LOW';\n\n  return {\n    priority_score: finalScore,\n    priority_level: priorityLevel,\n    scoring_breakdown: {\n      base_score: Math.round(baseScore),\n      technology_analysis: techAnalysis,\n      vulnerability_analysis: vulnAnalysis,\n      multipliers: {\n        cvss: cvssMultiplier,\n        age: ageMultiplier,\n        sector: sectorAnalysis.multiplier,\n        exploit: exploitMultiplier,\n        geographic: geoMultiplier\n      },\n      sector_analysis: sectorAnalysis\n    },\n    risk_factors: {\n      exploit_available: cve.exploit_available || false,\n      cvss_score: cve.cvss?.score || null,\n      cvss_severity: cve.cvss?.severity || 'unknown',\n      age_days: cve.published_date ? Math.floor((new Date() - new Date(cve.published_date)) / (1000 * 60 * 60 * 24)) : null,\n      affected_technologies: techAnalysis.categories,\n      vulnerability_types: vulnAnalysis.matched_types.map(t => t.type),\n      sector: sectorAnalysis.sector\n    }\n  };\n}\n\n// Main processing function\nfunction processCveData(data) {\n  if (!data.cves || !Array.isArray(data.cves)) {\n    throw new Error('Invalid input: expected CVE data with cves array');\n  }\n\n  console.log(`🔄 Processing ${data.cves.length} CVEs with improved scoring algorithm...`);\n\n  // Score all CVEs\n  const scoredCves = data.cves.map(cve => ({\n    ...cve,\n    priority_scoring: calculatePriorityScore(cve)\n  }));\n\n  // Sort by priority score (highest first), then by CVSS score\n  scoredCves.sort((a, b) => {\n    if (b.priority_scoring.priority_score !== a.priority_scoring.priority_score) {\n      return b.priority_scoring.priority_score - a.priority_scoring.priority_score;\n    }\n    return (b.cvss?.score || 0) - (a.cvss?.score || 0);\n  });\n\n  // Calculate statistics\n  const stats = {\n    total_cves: scoredCves.length,\n    priority_distribution: {\n      CRITICAL: scoredCves.filter(c => c.priority_scoring.priority_level === 'CRITICAL').length,\n      HIGH: scoredCves.filter(c => c.priority_scoring.priority_level === 'HIGH').length,\n      MEDIUM: scoredCves.filter(c => c.priority_scoring.priority_level === 'MEDIUM').length,\n      LOW: scoredCves.filter(c => c.priority_scoring.priority_level === 'LOW').length\n    },\n    average_score: Math.round(\n      scoredCves.reduce((sum, cve) => sum + cve.priority_scoring.priority_score, 0) / scoredCves.length\n    ),\n    score_ranges: {\n      max: Math.max(...scoredCves.map(c => c.priority_scoring.priority_score)),\n      min: Math.min(...scoredCves.map(c => c.priority_scoring.priority_score))\n    }\n  };\n\n  return {\n    fileName: `scored-cves-${new Date().toISOString().replace(/[:]/g, '-').replace(/[.]\\d+Z/, '')}.json`,\n    file_size_bytes: 0, // Will be calculated\n    file_size_kb: \"0 KB\", // Will be calculated\n    generated_at: new Date().toISOString(),\n    total_scored_cves: stats.total_cves,\n    priority_distribution: stats.priority_distribution,\n    average_score: stats.average_score,\n    scoring_algorithm_version: \"2.0\",\n    improvements: [\n      \"Better weighted scoring algorithm\",\n      \"Improved technology matching with context\",\n      \"Age-based priority adjustment\",\n      \"Enhanced vulnerability type detection\",\n      \"Balanced multiplier application\",\n      \"More accurate sector-based weighting\"\n    ],\n    cves: scoredCves\n  };\n}\n\n// Execute the improved scoring\ntry {\n  const result = processCveData(inputData);\n  \n  console.log(`✅ Successfully processed ${result.total_scored_cves} CVEs`);\n  console.log('📊 Priority distribution:', result.priority_distribution);\n  console.log('📈 Average score:', result.average_score);\n  console.log('🔧 Algorithm version:', result.scoring_algorithm_version);\n\n  return [{ json: result }];\n\n} catch (error) {\n  console.error('❌ Error in improved CVE scoring:', error.message);\n  throw error;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        176
+      ],
+      "id": "f21311c6-5bb6-4e8c-9bf7-227eea26d154",
+      "name": "get priority"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        144,
+        576
+      ],
+      "id": "5fa3549e-e042-497c-a00f-b15482279d64",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "KPLg8t591slfwlny",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        144,
+        416
+      ],
+      "id": "83d639bd-986f-4aac-af73-5b81dc034491",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "html",
+        "options": {
+          "dataIsBase64": false,
+          "fileName": "index.html",
+          "mimeType": "text/html"
+        }
+      },
+      "id": "7d796cf0-a9e6-4eba-8833-8ab9ba48024e",
+      "name": "Convert to File1",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        128,
+        144
+      ],
+      "id": "e67eab48-52b2-41df-95d3-b6cb267e4e86",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "// CVE Filter Script - Remove CVEs with priority score < 50\n// This code should be placed in a Code node after the scoring process\n\nconst inputData = $input.first().json; // Assuming the scored CVE JSON is passed as input\n\n// Function to filter CVEs with priority score >= 50\nfunction filterCvesByPriorityScore(data, minimumScore = 50) {\n  if (!data || typeof data !== 'object') {\n    throw new Error('Invalid input: expected object with CVE data');\n  }\n\n  // Handle both array format and direct object format\n  let cveData;\n  if (Array.isArray(data)) {\n    // If input is an array, take the first element\n    cveData = data[0];\n  } else {\n    // If input is already an object\n    cveData = data;\n  }\n\n  if (!cveData.cves || !Array.isArray(cveData.cves)) {\n    throw new Error('Invalid input: expected CVE data with cves array');\n  }\n\n  // Filter CVEs with priority score >= minimumScore\n  const filteredCves = cveData.cves.filter(cve => {\n    const priorityScore = cve.priority_scoring?.priority_score || 0;\n    return priorityScore >= minimumScore;\n  });\n\n  // Recalculate priority distribution for filtered data\n  const priorityDistribution = {\n    CRITICAL: filteredCves.filter(c => c.priority_scoring?.priority_level === 'CRITICAL').length,\n    HIGH: filteredCves.filter(c => c.priority_scoring?.priority_level === 'HIGH').length,\n    MEDIUM: filteredCves.filter(c => c.priority_scoring?.priority_level === 'MEDIUM').length,\n    LOW: filteredCves.filter(c => c.priority_scoring?.priority_level === 'LOW').length\n  };\n\n  // Recalculate average score for filtered data\n  const validScores = filteredCves\n    .map(cve => cve.priority_scoring?.priority_score || 0)\n    .filter(score => !isNaN(score) && score >= 0);\n\n  const averageScore = validScores.length > 0 \n    ? Math.round(validScores.reduce((sum, score) => sum + score, 0) / validScores.length)\n    : 0;\n\n  // Create filtered result with same structure\n  const filteredResult = {\n    fileName: cveData.fileName || `filtered-cves-${new Date().toISOString().replace(/[:]/g, '-').replace(/[.]\\d+Z/, '')}.json`,\n    file_size_bytes: cveData.file_size_bytes, // Will be recalculated below\n    file_size_kb: cveData.file_size_kb, // Will be recalculated below\n    generated_at: new Date().toISOString(),\n    total_scored_cves: filteredCves.length,\n    priority_distribution: priorityDistribution,\n    average_score: averageScore,\n    cves: filteredCves\n  };\n\n  // Recalculate file size for filtered data\n  const jsonContent = JSON.stringify(filteredResult, null, 2);\n  const fileSizeBytes = Buffer.byteLength(jsonContent, 'utf8');\n  const fileSizeKB = (fileSizeBytes / 1024).toFixed(2);\n\n  // Update file size information\n  filteredResult.file_size_bytes = fileSizeBytes;\n  filteredResult.file_size_kb = `${fileSizeKB} KB`;\n\n  return filteredResult;\n}\n\n// Main execution\ntry {\n  console.log('🔄 Starting CVE filtering (priority score >= 50)...');\n  \n  // Validate input\n  if (!inputData) {\n    throw new Error('No input data provided');\n  }\n  \n  const filteredData = filterCvesByPriorityScore(inputData, 50);\n  \n  console.log(`✅ Filtered CVEs: ${filteredData.total_scored_cves} CVEs remaining (priority score >= 50)`);\n  console.log('📊 Priority distribution after filtering:', filteredData.priority_distribution);\n  console.log('📈 Average priority score after filtering:', filteredData.average_score);\n  \n  // Return in the exact same format as input (array format)\n  return [filteredData];\n\n} catch (error) {\n  console.error('❌ Error during CVE filtering:', error.message);\n  console.error('Stack trace:', error.stack);\n  \n  // Return error information in the same format\n  return [{\n    \"fileName\": `error-${new Date().toISOString().replace(/[:]/g, '-').replace(/[.]\\d+Z/, '')}.json`,\n    \"file_size_bytes\": 0,\n    \"file_size_kb\": \"0 KB\",\n    \"generated_at\": new Date().toISOString(),\n    \"total_scored_cves\": 0,\n    \"priority_distribution\": {\n      \"CRITICAL\": 0,\n      \"HIGH\": 0,\n      \"MEDIUM\": 0,\n      \"LOW\": 0\n    },\n    \"average_score\": 0,\n    \"error\": error.message,\n    \"error_type\": error.name || 'Unknown Error',\n    \"cves\": []\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        176
+      ],
+      "id": "6997bde7-c1cb-4a60-9965-1cfb0f93f1c5",
+      "name": "remove low"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Node 1: \"Batch CVEs\" - Code Node to create batches of 10 CVEs\nconst allCves = $input.first().json.cves || [];\nconst batchSize = 10;\nconst batches = [];\n\n// Create batches of 10 CVEs each\nfor (let i = 0; i < allCves.length; i += batchSize) {\n  const batch = allCves.slice(i, i + batchSize);\n  batches.push({\n    json: {\n      batch_number: Math.floor(i / batchSize) + 1,\n      total_batches: Math.ceil(allCves.length / batchSize),\n      cves: batch,\n      batch_size: batch.length\n    }\n  });\n}\n\nconsole.log(`Created ${batches.length} batches of CVEs`);\nreturn batches;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        176
+      ],
+      "id": "71180ad2-459c-404e-a530-1d662030b1de",
+      "name": "batch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Node 4: \"Combine All Batches\" - Code Node (after loop ends)\nconst allBatches = $input.all(); // Get all items from previous nodes\nlet allProcessedCves = [];\nlet successfulBatches = 0;\nlet failedBatches = 0;\nlet batchDetails = [];\n\nconsole.log(`Received ${allBatches.length} batches to combine`);\n\n// Sort batches by batch_number to maintain order\nallBatches.sort((a, b) => (a.json.batch_number || 0) - (b.json.batch_number || 0));\n\n// Combine all processed CVEs\nallBatches.forEach((batch, index) => {\n  const batchData = batch.json;\n  console.log(`Processing batch ${index + 1}: status=${batchData.processing_status}, CVEs=${batchData.processed_cves?.length || 0}`);\n  \n  const batchDetail = {\n    batch_number: batchData.batch_number || index + 1,\n    status: batchData.processing_status || 'unknown',\n    cve_count: batchData.processed_cves?.length || 0,\n    raw_output_preview: batchData.raw_output?.substring(0, 100) || 'No output'\n  };\n  \n  if (batchData.processing_status === 'success' && batchData.processed_cves && Array.isArray(batchData.processed_cves)) {\n    allProcessedCves = allProcessedCves.concat(batchData.processed_cves);\n    successfulBatches++;\n    batchDetail.success = true;\n  } else {\n    failedBatches++;\n    batchDetail.success = false;\n    console.log(`Batch ${batchData.batch_number || index + 1} failed processing:`, batchData.raw_output?.substring(0, 200));\n  }\n  \n  batchDetails.push(batchDetail);\n});\n\nconsole.log(`Combined ${allProcessedCves.length} CVEs from ${successfulBatches} successful batches`);\nif (failedBatches > 0) {\n  console.log(`${failedBatches} batches failed processing`);\n}\n\n// Deduplicate CVEs by cve_id if needed\nconst uniqueCves = [];\nconst seenIds = new Set();\nallProcessedCves.forEach(cve => {\n  if (cve.cve_id && !seenIds.has(cve.cve_id)) {\n    seenIds.add(cve.cve_id);\n    uniqueCves.push(cve);\n  } else if (!cve.cve_id) {\n    // Include CVEs without IDs (shouldn't happen but just in case)\n    uniqueCves.push(cve);\n  }\n});\n\nconsole.log(`After deduplication: ${uniqueCves.length} unique CVEs`);\n\nreturn [{\n  json: {\n    total_processed_cves: uniqueCves.length,\n    successful_batches: successfulBatches,\n    failed_batches: failedBatches,\n    combined_cves: uniqueCves,\n    processing_complete: true,\n    batch_details: batchDetails,\n    total_batches_received: allBatches.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        128
+      ],
+      "id": "4da4d1c1-3e24-42bf-a654-73b382235768",
+      "name": "combined llm answer"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Node 5: \"Generate Final HTML Report\" - Code Node\nconst combinedData = $input.first().json;\nconst allCves = combinedData.combined_cves || [];\n\nconsole.log(`Generating HTML report for ${allCves.length} CVEs`);\nconsole.log('Processing stats:', {\n  total_batches: combinedData.total_batches_received,\n  successful: combinedData.successful_batches,\n  failed: combinedData.failed_batches\n});\n\n// Add processing summary to the report\nconst processingSummary = {\n  total_batches: combinedData.total_batches_received || 0,\n  successful_batches: combinedData.successful_batches || 0,\n  failed_batches: combinedData.failed_batches || 0,\n  batch_details: combinedData.batch_details || []\n};\n\n// Generate comprehensive HTML report\nlet htmlContent = `\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>CVE Executive Summary Report</title>\n  <style>\n    body {\n      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n      background-color: #f5f7fa;\n      margin: 0;\n      padding: 20px;\n      line-height: 1.6;\n    }\n    .container {\n      max-width: 1200px;\n      margin: 0 auto;\n    }\n    .header {\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      color: white;\n      padding: 30px;\n      border-radius: 10px;\n      text-align: center;\n      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n      margin-bottom: 30px;\n    }\n    .stats {\n      display: grid;\n      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));\n      gap: 20px;\n      margin-bottom: 30px;\n    }\n    .stat-card {\n      background: white;\n      padding: 20px;\n      border-radius: 8px;\n      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n      text-align: center;\n    }\n    .stat-number {\n      font-size: 2em;\n      font-weight: bold;\n      color: #667eea;\n    }\n    .cve-grid {\n      display: grid;\n      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));\n      gap: 20px;\n    }\n    .cve-card {\n      background: white;\n      border-radius: 8px;\n      padding: 20px;\n      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);\n      border-left: 5px solid;\n      transition: transform 0.2s ease;\n    }\n    .cve-card:hover {\n      transform: translateY(-2px);\n      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);\n    }\n    .cve-title {\n      font-size: 1.1em;\n      font-weight: bold;\n      color: #2c3e50;\n      margin-bottom: 10px;\n    }\n    .cve-meta {\n      display: flex;\n      justify-content: space-between;\n      margin-bottom: 15px;\n      font-size: 0.9em;\n      color: #7f8c8d;\n    }\n    .cve-summary {\n      color: #34495e;\n      margin-bottom: 10px;\n    }\n    .cve-products {\n      background: #f8f9fa;\n      padding: 8px;\n      border-radius: 4px;\n      font-size: 0.85em;\n      color: #6c757d;\n    }\n    \n    /* Risk level colors */\n    .risk-critical { border-left-color: #e74c3c; }\n    .risk-high { border-left-color: #e67e22; }\n    .risk-medium { border-left-color: #f39c12; }\n    .risk-low { border-left-color: #27ae60; }\n    \n    .risk-badge {\n      padding: 4px 8px;\n      border-radius: 12px;\n      font-size: 0.8em;\n      font-weight: bold;\n      text-transform: uppercase;\n    }\n    .risk-critical-badge { background: #e74c3c; color: white; }\n    .risk-high-badge { background: #e67e22; color: white; }\n    .risk-medium-badge { background: #f39c12; color: white; }\n    .risk-low-badge { background: #27ae60; color: white; }\n    \n    @media (max-width: 768px) {\n      .cve-grid {\n        grid-template-columns: 1fr;\n      }\n      .stats {\n        grid-template-columns: 1fr;\n      }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>CVE Executive Summary Report</h1>\n      <p>Generated on ${new Date().toLocaleDateString('en-US', { \n        year: 'numeric', \n        month: 'long', \n        day: 'numeric',\n        hour: '2-digit',\n        minute: '2-digit'\n      })}</p>\n      <p>Processing: ${processingSummary.successful_batches}/${processingSummary.total_batches} batches successful</p>\n    </div>\n`;\n\n// Calculate statistics\nconst riskStats = {\n  critical: allCves.filter(cve => cve.risk_level?.toLowerCase() === 'critical').length,\n  high: allCves.filter(cve => cve.risk_level?.toLowerCase() === 'high').length,\n  medium: allCves.filter(cve => cve.risk_level?.toLowerCase() === 'medium').length,\n  low: allCves.filter(cve => cve.risk_level?.toLowerCase() === 'low').length\n};\n\nconst avgScore = allCves.reduce((sum, cve) => sum + (cve.priority_score || 0), 0) / allCves.length;\n\n// Add statistics section\nhtmlContent += `\n    <div class=\"stats\">\n      <div class=\"stat-card\">\n        <div class=\"stat-number\">${allCves.length}</div>\n        <div>Total CVEs</div>\n      </div>\n      <div class=\"stat-card\">\n        <div class=\"stat-number\">${riskStats.critical}</div>\n        <div>Critical Risk</div>\n      </div>\n      <div class=\"stat-card\">\n        <div class=\"stat-number\">${riskStats.high}</div>\n        <div>High Risk</div>\n      </div>\n      <div class=\"stat-card\">\n        <div class=\"stat-number\">${avgScore.toFixed(1)}</div>\n        <div>Average Priority Score</div>\n      </div>\n      <div class=\"stat-card\">\n        <div class=\"stat-number\">${processingSummary.successful_batches}</div>\n        <div>Successful Batches</div>\n      </div>\n      <div class=\"stat-card\">\n        <div class=\"stat-number\">${processingSummary.failed_batches}</div>\n        <div>Failed Batches</div>\n      </div>\n    </div>\n    \n    <div class=\"cve-grid\">\n`;\n\n// Helper function to get risk class\nfunction getRiskClass(level) {\n  if (!level) return 'risk-low';\n  const levelLower = level.toLowerCase();\n  return `risk-${levelLower}`;\n}\n\nfunction getRiskBadgeClass(level) {\n  if (!level) return 'risk-low-badge';\n  const levelLower = level.toLowerCase();\n  return `risk-${levelLower}-badge`;\n}\n\n// Generate CVE cards\nallCves.forEach(cve => {\n  const riskClass = getRiskClass(cve.risk_level);\n  const riskBadgeClass = getRiskBadgeClass(cve.risk_level);\n  const publishedDate = cve.published_date ? new Date(cve.published_date).toLocaleDateString() : 'Unknown';\n  const affectedProducts = Array.isArray(cve.affected_products) ? \n    cve.affected_products.join(', ') : \n    (cve.affected_products || 'Not specified');\n\n  htmlContent += `\n    <div class=\"cve-card ${riskClass}\">\n      <div class=\"cve-title\">${cve.title || cve.cve_id}</div>\n      <div class=\"cve-meta\">\n        <span><strong>ID:</strong> ${cve.cve_id}</span>\n        <span class=\"risk-badge ${riskBadgeClass}\">${cve.risk_level || 'Unknown'}</span>\n      </div>\n      <div class=\"cve-meta\">\n        <span><strong>Priority Score:</strong> ${cve.priority_score || 'N/A'}</span>\n        <span><strong>Published:</strong> ${publishedDate}</span>\n      </div>\n      <div class=\"cve-summary\">${cve.summary || 'No summary available'}</div>\n      <div class=\"cve-products\">\n        <strong>Affected Products:</strong> ${affectedProducts}\n      </div>\n    </div>\n  `;\n});\n\nhtmlContent += `\n    </div>\n  </div>\n</body>\n</html>\n`;\n\nconsole.log('HTML report generated successfully');\n\nreturn [{\n  json: {\n    html: htmlContent,\n    report_stats: {\n      total_cves: allCves.length,\n      risk_distribution: riskStats,\n      average_score: avgScore.toFixed(2),\n      successful_batches: combinedData.successful_batches,\n      failed_batches: combinedData.failed_batches,\n      processing_summary: processingSummary\n    },\n    html_size_kb: Math.round(htmlContent.length / 1024),\n    generation_timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        16
+      ],
+      "id": "d32feda5-5c32-4093-8532-abcc0c8e3de6",
+      "name": "change json to html"
+    },
+    {
+      "parameters": {
+        "jsCode": "const batchData = $input.first().json;\nconst cves = batchData.cves || [];\n\nconsole.log(`Processing batch ${batchData.batch_number} of ${batchData.total_batches} with ${cves.length} CVEs`);\n\n// Create a simplified version of CVE data for the prompt\nconst simplifiedCves = cves.map(cve => ({\n  cve_id: cve.cve_id,\n  description: cve.description || '',\n  priority_score: cve.priority_scoring?.priority_score || null,\n  priority_level: cve.priority_scoring?.priority_level || 'unknown',\n  published_date: cve.published_date,\n  last_modified: cve.last_modified,\n  affected_products: cve.affected_products || [],\n  tags: cve.tags || []\n}));\n\n// Create prompt for this batch\nconst prettyJson = JSON.stringify(simplifiedCves, null, 2);\nconst prompt = `You are a cybersecurity analyst. For each CVE provided, generate a short structured summary with key details. Return ONLY a valid JSON array with no additional text or markdown formatting.\n\nRequired format for each CVE:\n{\n  \"cve_id\": \"CVE-XXXX-XXXX\",\n  \"priority_score\": 55,\n  \"title\": \"Brief descriptive title\",\n  \"summary\": \"Concise 1-2 sentence summary of the vulnerability\",\n  \"published_date\": \"YYYY-MM-DD\",\n  \"last_modified\": \"YYYY-MM-DD\",\n  \"affected_products\": [\"Product 1\", \"Product 2\"],\n  \"risk_level\": \"CRITICAL|HIGH|MEDIUM|LOW\"\n}\n\nRules:\n- Return ONLY the JSON array, no other text\n- Use the CVE description to create a clear title and summary\n- Use the priority_level from the original CVE data as the risk_level (convert to uppercase)\n- Use the priority_score from the original CVE data\n- Extract product names from affected_products array\n- Keep summaries concise but informative\n\nInput CVEs to process:\n${prettyJson}`;\n\nreturn [{\n  json: {\n    batch_number: batchData.batch_number,\n    total_batches: batchData.total_batches,\n    prompt: prompt,\n    original_cves: cves,\n    cve_count: cves.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        416
+      ],
+      "id": "7ac2d1a1-cbe3-46d2-9ff3-323d2787cae4",
+      "name": "prepare message"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Node 3: \"Extract LLM Response\" - Code Node (after AI Agent)\nconst inputData = $input.first().json;\nlet aiOutput;\nlet batchInfo;\n\n// Handle different input structures from AI Agent\nif (inputData.output) {\n  // Direct AI Agent output\n  aiOutput = inputData.output;\n  batchInfo = inputData;\n} else if (inputData.text) {\n  // Alternative AI Agent output structure\n  aiOutput = inputData.text;\n  batchInfo = inputData;\n} else {\n  // Fallback - use the entire input as AI output\n  aiOutput = JSON.stringify(inputData);\n  batchInfo = { batch_number: 1, total_batches: 1 };\n}\n\nconsole.log('AI Output received:', typeof aiOutput, aiOutput?.substring ? aiOutput.substring(0, 200) : aiOutput);\n\n// Extract JSON from LLM response\nlet processedCves = [];\ntry {\n  // Try multiple extraction methods\n  const jsonMatch = aiOutput.match(/```json\\s*([\\s\\S]*?)\\s*```/) || \n                   aiOutput.match(/```\\s*([\\s\\S]*?)\\s*```/) ||\n                   aiOutput.match(/\\[\\s*{[\\s\\S]*}\\s*\\]/) ||\n                   [null, aiOutput];\n  \n  if (jsonMatch && jsonMatch[1]) {\n    const jsonString = jsonMatch[1].trim();\n    processedCves = JSON.parse(jsonString);\n  } else if (jsonMatch && jsonMatch[0]) {\n    // Direct array match\n    processedCves = JSON.parse(jsonMatch[0]);\n  } else {\n    // Try to parse the entire output as JSON\n    processedCves = JSON.parse(aiOutput);\n  }\n  \n  // Ensure it's an array\n  if (!Array.isArray(processedCves)) {\n    processedCves = [processedCves];\n  }\n  \n} catch (e) {\n  console.error(`Failed to parse JSON for batch ${batchInfo.batch_number}:`, e.message);\n  console.error('Raw AI output:', aiOutput);\n  processedCves = [];\n}\n\nconsole.log(`Processed ${processedCves.length} CVEs for batch ${batchInfo.batch_number}`);\n\nreturn [{\n  json: {\n    batch_number: batchInfo.batch_number || 1,\n    total_batches: batchInfo.total_batches || 1,\n    processed_cves: processedCves,\n    processing_status: processedCves.length > 0 ? 'success' : 'failed',\n    raw_output: aiOutput?.substring ? aiOutput.substring(0, 500) : String(aiOutput).substring(0, 500)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        384
+      ],
+      "id": "02eae738-592c-46dc-a2ed-55ea73f9f78f",
+      "name": "get json from llm message"
+    },
+    {
+      "parameters": {},
+      "id": "43a848cc-a92a-4d55-ae2a-6599dd4d7214",
+      "name": "Cron - every 3h",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -2864,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.cert.ssi.gouv.fr/feed/",
+        "options": {}
+      },
+      "id": "29f9cb8e-9e07-46e3-a612-be5aeaeaa0cb",
+      "name": "RSS CERT-FR",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -2176,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.bleepingcomputer.com/feed/",
+        "options": {}
+      },
+      "id": "147684a0-297a-4466-abfc-ef117d21aad1",
+      "name": "RSS BleepingComputer",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -2176,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://securelist.com/feed/",
+        "options": {}
+      },
+      "id": "e9038cf9-3d27-496f-b7d3-77fc4019a856",
+      "name": "RSS SecureList",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -2176,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Normalise différentes formes d'items RSS/HTML vers un JSON commun\nreturn $input.all().map(item => {\n  const j = item.json || {};\n  const title = j.title || j['rss:title'] || j['dc:title'] || '';\n  const content = j.content || j['content:encoded'] || j.description || j.summary || j['rss:content'] || j.body || '';\n  const link = j.link || j.url || j.guid || '';\n  const date = j.pubDate || j.isoDate || j.published || j.date || new Date().toISOString();\n\n  return {\n    json: {\n      title: title,\n      date: date,\n      content: content,\n      link: link,\n      identificateurs_externes: [],\n      risque: [],\n      systemes_affectes: [],\n      criticite: []\n    }\n  };\n});\n"
+      },
+      "id": "7354125b-0e1c-44f7-93bd-a944fcfe0f53",
+      "name": "Structurer Données",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1408,
+        912
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ebba640e-90b1-4834-b5fe-32c491488bda",
+      "name": "Merge Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -1776,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = new Set();\nreturn $input.all().filter(item => {\n  const j = item.json || {};\n  const key = (j.link || j.title || '').trim().toLowerCase();\n  if (!key || seen.has(key)) return false;\n  seen.add(key);\n  return true;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1024,
+        1040
+      ],
+      "id": "d2396b76-f1b7-478f-af3a-667e4481725f",
+      "name": "detect doublons"
+    },
+    {
+      "parameters": {},
+      "id": "a452020d-d459-4005-8eb6-69710fd8520e",
+      "name": "Merge Sources1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -1584,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:5002",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2176,
+        1248
+      ],
+      "id": "c6f6232d-6533-4575-9973-7e7c2c7f18fd",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1200,
+        1040
+      ],
+      "id": "ad34c37d-7ce2-4c5f-b022-f998cbd7e3a1",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "043b964a-0161-4ff3-a70e-7cd938a76636",
+      "name": "Loop Over Bulletins",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -800,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and parse LLM response\nconst inputData = $input.first().json;\nlet aiOutput;\n\n// Handle different AI Agent output structures\nif (inputData.output) {\n  aiOutput = inputData.output;\n} else if (inputData.text) {\n  aiOutput = inputData.text;\n} else {\n  aiOutput = JSON.stringify(inputData);\n}\n\nconsole.log('AI Output received:', aiOutput?.substring(0, 200));\n\n// Parse JSON from LLM response\nlet processedBulletins = [];\ntry {\n  // Try multiple extraction methods\n  const jsonMatch = aiOutput.match(/```json\\s*([\\s\\S]*?)\\s*```/) || \n                   aiOutput.match(/```\\s*([\\s\\S]*?)\\s*```/) ||\n                   aiOutput.match(/\\[\\s*{[\\s\\S]*}\\s*\\]/) ||\n                   [null, aiOutput];\n  \n  if (jsonMatch && jsonMatch[1]) {\n    processedBulletins = JSON.parse(jsonMatch[1].trim());\n  } else if (jsonMatch && jsonMatch[0]) {\n    processedBulletins = JSON.parse(jsonMatch[0]);\n  } else {\n    processedBulletins = JSON.parse(aiOutput);\n  }\n  \n  if (!Array.isArray(processedBulletins)) {\n    processedBulletins = [processedBulletins];\n  }\n  \n} catch (e) {\n  console.error('Failed to parse LLM JSON response:', e.message);\n  processedBulletins = [];\n}\n\nconsole.log(`Successfully processed ${processedBulletins.length} bulletins`);\n\nreturn processedBulletins.map(bulletin => ({ json: bulletin }));"
+      },
+      "id": "3fd62a74-646b-40a2-923c-1c371202a29c",
+      "name": "Extract LLM Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all processed bulletins from all batches\nconst allResults = $input.all();\nlet combinedBulletins = [];\n\nconsole.log(`Combining results from ${allResults.length} items`);\n\n// Collect all processed bulletins\nallResults.forEach((item, index) => {\n  if (item.json && typeof item.json === 'object') {\n    combinedBulletins.push(item.json);\n    console.log(`Added bulletin ${index + 1}: ${item.json.title || 'No title'}`);\n  }\n});\n\n// Sort by priority score (highest first)\ncombinedBulletins.sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0));\n\nconsole.log(`Final result: ${combinedBulletins.length} analyzed bulletins`);\n\nreturn [{\n  json: {\n    total_bulletins: combinedBulletins.length,\n    analyzed_bulletins: combinedBulletins,\n    processing_complete: true,\n    generated_at: new Date().toISOString(),\n    summary: {\n      critical: combinedBulletins.filter(b => b.severity === 'Critical').length,\n      high: combinedBulletins.filter(b => b.severity === 'High').length,\n      medium: combinedBulletins.filter(b => b.severity === 'Medium').length,\n      low: combinedBulletins.filter(b => b.severity === 'Low').length\n    }\n  }\n}];"
+      },
+      "id": "34d11fc1-4489-4db2-9fde-59bd787df157",
+      "name": "Combine All Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "options": {
+          "fileName": "dgssi_analysis_{{ new Date().toISOString().split('T')[0] }}.json"
+        }
+      },
+      "id": "66622163-7963-4461-98b8-e66a83553727",
+      "name": "Save Final JSON",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tu es un expert en cybersécurité spécialisé dans l'analyse de menaces pour les régions EMEA (Europe, Moyen-Orient, Afrique), avec un focus particulier sur le Maroc et la France.\n\nAnalyse les données de sécurité suivantes et fournis une évaluation structurée :\n\n**DONNÉES À ANALYSER :**\n- Titre : {{ $json.title }}\n- Date : {{ $json.date }}\n- Contenu : {{ $json.content }}\n- Link : {{ $json.link }}\n- systemes affectés : {{ $json.systemes_affectes }}\n- identificateur externes : {{ $json.identificateurs_externes }}\n- risques : {{ $json.risque }}\n- criticite : {{ $json.criticite }}\n\n\n**ANALYSE REQUISE :**\n\n1. **NIVEAU DE CRITICITÉ** (Faible/Moyen/Élevé/Critique) :\n   - Évalue l'impact potentiel sur les infrastructures critiques marocaines et françaises\n\n2. **TYPE DE MENACE** :\n   - Catégorise la menace (malware, phishing, vulnérabilité, APT, etc.)\n\n3. **RÉSUMÉ EXÉCUTIF** (max 200 mots) :\n   - Résumé en français des points clés\n   - Impact spécifique pour la région EMEA/Maroc/France\n\n4. **SECTEURS CONCERNÉS** :\n   - Identifie les secteurs les plus à risque (gouvernement, finance, santé, énergie, etc.)\n\n5. **ACTIONS RECOMMANDÉES** :\n   - 3-5 recommandations concrètes et prioritaires\n   - Mesures préventives spécifiques au contexte local\n\n6. **URGENCE** :\n   - Délai recommandé pour l'action (Immédiat/24h/48h/7 jours)\n\nRéponds uniquement avec l'analyse structurée en JSON valide suivant ce format :\n{\n  \"Source\": \"xxxx\",\n  \"Titre\": \"xxxx\",\n  \"Date\": \"xxxx\",\n  \"Contenu\": \"xxxx\",\n  \"Link\": \"xxxx\",\n  \"criticite\": \"Élevé\",\n  \"type_menace\": \"Vulnérabilité critique\",\n  \"resume\": \"...\",\n  \"secteurs_concernes\": [\"gouvernement\", \"finance\"],\n  \"actions_recommandees\": [\"action1\", \"action2\", \"action3\"],\n  \"urgence\": \"24h\",\n  \"score_risque\": 8.5,\n  \"systemes affectés\" : \"xxx\", (only if exist)\n  \"identificateur externes\": [\"xxx\",\"xxx\",\"xxx\"], (only if existes)\n  \"risques\" : \"xxxx\"\n}",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "=Tu es un expert en cybersécurité spécialisé dans l'analyse de menaces pour les régions EMEA (Europe, Moyen-Orient, Afrique), avec un focus particulier sur le Maroc et la France.\n\nAnalyse les données de sécurité suivantes et fournis une évaluation structurée :\n\n**DONNÉES À ANALYSER :**\n- Source : {{ $json.source }}\n- Titre : {{ $json.title }}\n- Date : {{ $json.date }}\n- Contenu : {{ $json.content }}\n- CVE identifiés : {{ $json.cve_ids }}\n- Région concernée : {{ $json.region }}\n\n**ANALYSE REQUISE :**\n\n1. **NIVEAU DE CRITICITÉ** (Faible/Moyen/Élevé/Critique) :\n   - Évalue l'impact potentiel sur les infrastructures critiques marocaines et françaises\n\n2. **TYPE DE MENACE** :\n   - Catégorise la menace (malware, phishing, vulnérabilité, APT, etc.)\n\n3. **RÉSUMÉ EXÉCUTIF** (max 200 mots) :\n   - Résumé en français des points clés\n   - Impact spécifique pour la région EMEA/Maroc/France\n\n4. **SECTEURS CONCERNÉS** :\n   - Identifie les secteurs les plus à risque (gouvernement, finance, santé, énergie, etc.)\n\n5. **ACTIONS RECOMMANDÉES** :\n   - 3-5 recommandations concrètes et prioritaires\n   - Mesures préventives spécifiques au contexte local\n\n6. **URGENCE** :\n   - Délai recommandé pour l'action (Immédiat/24h/48h/7 jours)\n\nRéponds uniquement avec l'analyse structurée en JSON valide suivant ce format :\n{\n  \"criticite\": \"Élevé\",\n  \"type_menace\": \"Vulnérabilité critique\",\n  \"resume\": \"...\",\n  \"secteurs_concernes\": [\"gouvernement\", \"finance\"],\n  \"actions_recommandees\": [\"action1\", \"action2\", \"action3\"],\n  \"urgence\": \"24h\",\n  \"score_risque\": 8.5\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -608,
+        1088
+      ],
+      "id": "c77b584e-052e-474b-b423-ecedfba1099c",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "id": "2cdec80a-d24c-44cd-804d-5f4ebf1538fe",
+      "name": "Groq Résumé & Classification1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        1232
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "KPLg8t591slfwlny",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Update the HTML generation code with modern styling\nconst data = $json.analyzed_bulletins || [];\nconst summary = $json.summary || {};\nconst total = $json.total_bulletins || 0;\nconst scoreMoyen = (data.reduce((a, b) => a + (b.score_risque || 0), 0) / (data.length || 1)).toFixed(1);\n\nlet html = `\n<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Cybersecurity Threat Dashboard</title>\n  <style>\n    :root {\n      --primary: #4361ee;\n      --danger: #ef233c;\n      --warning: #f4a261;\n      --success: #2ec4b6;\n      --dark: #2b2d42;\n      --light: #f8f9fa;\n      --gray: #adb5bd;\n    }\n    \n    body {\n      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;\n      margin: 0;\n      padding: 0;\n      background-color: #f5f7ff;\n      color: var(--dark);\n    }\n    \n    .dashboard {\n      max-width: 1400px;\n      margin: 20px auto;\n      padding: 0 20px;\n    }\n    \n    .header {\n      padding: 25px 0;\n      border-bottom: 1px solid rgba(0,0,0,0.1);\n      margin-bottom: 30px;\n    }\n    \n    .header h1 {\n      margin: 0;\n      font-size: 28px;\n      font-weight: 600;\n      color: var(--dark);\n    }\n    \n    .header p {\n      margin: 5px 0 0;\n      color: var(--gray);\n      font-size: 15px;\n    }\n    \n    /* Stats Cards */\n    .stats-container {\n      display: grid;\n      grid-template-columns: repeat(4, 1fr);\n      gap: 20px;\n      margin-bottom: 40px;\n    }\n    \n    .stat-card {\n      background: white;\n      border-radius: 12px;\n      padding: 20px;\n      box-shadow: 0 4px 12px rgba(0,0,0,0.05);\n      transition: transform 0.2s;\n    }\n    \n    .stat-card:hover {\n      transform: translateY(-3px);\n    }\n    \n    .stat-value {\n      font-size: 32px;\n      font-weight: 700;\n      margin-bottom: 5px;\n      color: var(--dark);\n    }\n    \n    .stat-label {\n      font-size: 14px;\n      color: var(--gray);\n      font-weight: 500;\n    }\n    \n    /* Filters Section */\n    .filters-section {\n      background: white;\n      border-radius: 12px;\n      padding: 25px;\n      margin-bottom: 30px;\n      box-shadow: 0 4px 12px rgba(0,0,0,0.05);\n    }\n    \n    .filters-grid {\n      display: grid;\n      grid-template-columns: repeat(3, 1fr);\n      gap: 20px;\n      margin-bottom: 20px;\n    }\n    \n    .filter-group {\n      margin-bottom: 15px;\n    }\n    \n    .filter-label {\n      display: block;\n      margin-bottom: 8px;\n      font-size: 14px;\n      font-weight: 600;\n      color: var(--dark);\n    }\n    \n    .filter-control {\n      width: 100%;\n      padding: 10px 15px;\n      border: 1px solid #e0e0e0;\n      border-radius: 8px;\n      font-size: 14px;\n      background: #fafafa;\n      transition: all 0.2s;\n    }\n    \n    .filter-control:focus {\n      outline: none;\n      border-color: var(--primary);\n      background: white;\n      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);\n    }\n    \n    .score-range {\n      display: flex;\n      align-items: center;\n      gap: 10px;\n    }\n    \n    .score-input {\n      flex: 1;\n      padding: 10px;\n      border: 1px solid #e0e0e0;\n      border-radius: 8px;\n      background: #fafafa;\n    }\n    \n    .filter-actions {\n      display: flex;\n      gap: 12px;\n      padding-top: 10px;\n    }\n    \n    .btn {\n      padding: 10px 20px;\n      border-radius: 8px;\n      font-size: 14px;\n      font-weight: 600;\n      cursor: pointer;\n      transition: all 0.2s;\n      border: none;\n    }\n    \n    .btn-primary {\n      background: var(--primary);\n      color: white;\n    }\n    \n    .btn-primary:hover {\n      background: #3a56d4;\n      transform: translateY(-1px);\n    }\n    \n    .btn-secondary {\n      background: white;\n      color: var(--dark);\n      border: 1px solid #e0e0e0;\n    }\n    \n    .btn-secondary:hover {\n      background: #f5f5f5;\n    }\n    \n    /* Results Section */\n    .results-section {\n      background: white;\n      border-radius: 12px;\n      padding: 25px;\n      box-shadow: 0 4px 12px rgba(0,0,0,0.05);\n    }\n    \n    .section-header {\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      margin-bottom: 20px;\n    }\n    \n    .section-title {\n      font-size: 18px;\n      font-weight: 600;\n      color: var(--dark);\n      margin: 0;\n    }\n    \n    .results-count {\n      font-size: 14px;\n      color: var(--gray);\n    }\n    \n    /* Table Styles */\n    .results-table {\n      width: 100%;\n      border-collapse: separate;\n      border-spacing: 0;\n    }\n    \n    .results-table thead th {\n      background: #f8f9fa;\n      padding: 15px;\n      text-align: left;\n      font-weight: 600;\n      font-size: 14px;\n      color: var(--dark);\n      position: sticky;\n      top: 0;\n    }\n    \n    .results-table tbody tr {\n      transition: background 0.2s;\n    }\n    \n    .results-table tbody tr:hover {\n      background: #f8fafd;\n    }\n    \n    .results-table td {\n      padding: 15px;\n      border-bottom: 1px solid #f0f0f0;\n      font-size: 14px;\n    }\n    \n    .results-table td:first-child {\n      font-weight: 500;\n    }\n    \n    /* Severity Badges */\n    .critical {\n      color: var(--danger);\n      font-weight: 600;\n    }\n    \n    .high {\n      color: var(--warning);\n      font-weight: 600;\n    }\n    \n    .medium {\n      color: #ff9f1c;\n      font-weight: 600;\n    }\n    \n    .low {\n      color: var(--success);\n      font-weight: 600;\n    }\n    \n    /* Link Style */\n    a {\n      color: var(--primary);\n      text-decoration: none;\n      font-weight: 500;\n    }\n    \n    a:hover {\n      text-decoration: underline;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"dashboard\">\n    <div class=\"header\">\n      <h1>Cybersecurity Threat Dashboard</h1>\n      <p>Analyses en temps réel des menaces de cybersécurité pour les régions EMEA</p>\n    </div>\n    \n    <!-- Global Stats -->\n    <div class=\"stats-container\">\n      <div class=\"stat-card\">\n        <div class=\"stat-value\">${total}</div>\n        <div class=\"stat-label\">Total Bulletins</div>\n      </div>\n      <div class=\"stat-card\">\n        <div class=\"stat-value\">${summary.critical || 0}</div>\n        <div class=\"stat-label\">Critique</div>\n      </div>\n      <div class=\"stat-card\">\n        <div class=\"stat-value\">${summary.high || 0}</div>\n        <div class=\"stat-label\">Élevé</div>\n      </div>\n      <div class=\"stat-card\">\n        <div class=\"stat-value\">${scoreMoyen}</div>\n        <div class=\"stat-label\">Score Moyen</div>\n      </div>\n    </div>\n    \n    <!-- Filters -->\n    <div class=\"filters-section\">\n      <h2 class=\"section-title\">Filtres de Recherche</h2>\n      <div class=\"filters-grid\">\n        <div class=\"filter-group\">\n          <label class=\"filter-label\">Recherche par titre/contenu</label>\n          <input type=\"text\" class=\"filter-control\" placeholder=\"Rechercher...\">\n        </div>\n        \n        <div class=\"filter-group\">\n          <label class=\"filter-label\">Niveau de criticité</label>\n          <select class=\"filter-control\">\n            <option>Tous les niveaux</option>\n            <option>Critique</option>\n            <option>Élevé</option>\n            <option>Moyen</option>\n            <option>Faible</option>\n          </select>\n        </div>\n        \n        <div class=\"filter-group\">\n          <label class=\"filter-label\">Type de menace</label>\n          <select class=\"filter-control\">\n            <option>Tous les types</option>\n            <option>Malware</option>\n            <option>Phishing</option>\n            <option>Vulnérabilité</option>\n            <option>APT</option>\n          </select>\n        </div>\n        \n        <div class=\"filter-group\">\n          <label class=\"filter-label\">Urgence</label>\n          <select class=\"filter-control\">\n            <option>Toutes urgences</option>\n            <option>Immédiat</option>\n            <option>24h</option>\n            <option>48h</option>\n            <option>7 jours</option>\n          </select>\n        </div>\n        \n        <div class=\"filter-group\">\n          <label class=\"filter-label\">Score de risque</label>\n          <div class=\"score-range\">\n            <input type=\"number\" class=\"score-input\" placeholder=\"Min\">\n            <span>-</span>\n            <input type=\"number\" class=\"score-input\" placeholder=\"Max\">\n          </div>\n        </div>\n        \n        <div class=\"filter-group\">\n          <label class=\"filter-label\">Secteur concerné</label>\n          <select class=\"filter-control\">\n            <option>Tous les secteurs</option>\n            <option>Gouvernement</option>\n            <option>Finance</option>\n            <option>Santé</option>\n            <option>Énergie</option>\n          </select>\n        </div>\n      </div>\n      \n      <div class=\"filter-actions\">\n        <button class=\"btn btn-primary\">Appliquer les filtres</button>\n        <button class=\"btn btn-secondary\">Effacer les filtres</button>\n        <button class=\"btn btn-secondary\">Exporter JSON</button>\n      </div>\n    </div>\n    \n    <!-- Results -->\n    <div class=\"results-section\">\n      <div class=\"section-header\">\n        <h2 class=\"section-title\">Résultats de l'Analyse</h2>\n        <div class=\"results-count\">${data.length} résultats</div>\n      </div>\n      \n      <table class=\"results-table\">\n        <thead>\n          <tr>\n            <th>Titre</th>\n            <th>Date</th>\n            <th>Niveau</th>\n            <th>Type</th>\n            <th>Secteurs</th>\n            <th>Score</th>\n          </tr>\n        </thead>\n        <tbody>\n`;\n\ndata.forEach(b => {\n  const severity = b.criticite || '';\n  const severityClass = severity.toLowerCase();\n  \n  html += `\n          <tr>\n            <td><a href=\"${b.Link || '#'}\" target=\"_blank\">${b.Titre || 'Sans titre'}</a></td>\n            <td>${b.Date || '-'}</td>\n            <td class=\"${severityClass}\">${severity || '-'}</td>\n            <td>${b.type_menace || '-'}</td>\n            <td>${(b.secteurs_concernes || []).join(', ') || '-'}</td>\n            <td>${b.score_risque || '-'}</td>\n          </tr>\n  `;\n});\n\nhtml += `\n        </tbody>\n      </table>\n    </div>\n  </div>\n</body>\n</html>\n`;\n\nreturn [{ json: { html_report: html } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        1040
+      ],
+      "id": "3c0a4685-cb37-4ac4-8391-2323c7ce7d2e",
+      "name": "Generate HTML Report"
+    },
+    {
+      "parameters": {
+        "jsCode": "const htmlContent = $input.first().json.html_report;\nreturn [{\n  json: {}, // You can keep this empty or add metadata\n  binary: {\n    data: {\n      // Convert HTML string to base64\n      data: Buffer.from(htmlContent).toString('base64'),\n      mimeType: 'text/html',\n      fileName: 'cyber_threat_dashboard_{{ $now.format(\"YYYY-MM-DD\") }}.html'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        1040
+      ],
+      "id": "ece11293-580d-4e6d-808d-9d6d52e2dd77",
+      "name": "Convert HTML string to base64"
+    },
+    {
+      "parameters": {
+        "jsCode": "const blogData = items; // items is already the array of blog posts\n\n// Get date range for the last two days (yesterday and today)\nconst today = new Date();\nconst yesterday = new Date(today);\nyesterday.setDate(today.getDate() - 0);\n\n// Start from beginning of yesterday\nconst startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());\n// End at end of today\nconst endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);\n\n// Filter and return blogs from the last two days in the same format as input\nconst twoDaysBlogs = blogData.filter(blogItem => {\n    // Each blogItem has a json property containing the blog data\n    const blog = blogItem.json;\n    const blogDate = new Date(blog.isoDate);\n    return blogDate >= startOfYesterday && blogDate <= endOfToday;\n});\n\nreturn twoDaysBlogs;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1984,
+        624
+      ],
+      "id": "1a28387b-2715-4ced-8426-3cc9d1faa569",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "const blogData = items; // items is already the array of blog posts\n\n// Get date range for the last two days (yesterday and today)\nconst today = new Date();\nconst yesterday = new Date(today);\nyesterday.setDate(today.getDate() - 0);\n\n// Start from beginning of yesterday\nconst startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());\n// End at end of today\nconst endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);\n\n// Filter and return blogs from the last two days in the same format as input\nconst twoDaysBlogs = blogData.filter(blogItem => {\n    // Each blogItem has a json property containing the blog data\n    const blog = blogItem.json;\n    const blogDate = new Date(blog.isoDate);\n    return blogDate >= startOfYesterday && blogDate <= endOfToday;\n});\n\nreturn twoDaysBlogs;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1984,
+        832
+      ],
+      "id": "0c6867db-ae88-4b80-a029-9fb57db33209",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const blogData = items; // items is already the array of blog posts\n\n// Get date range for the last two days (yesterday and today)\nconst today = new Date();\nconst yesterday = new Date(today);\nyesterday.setDate(today.getDate() - 0);\n\n// Start from beginning of yesterday\nconst startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());\n// End at end of today\nconst endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);\n\n// Filter and return blogs from the last two days in the same format as input\nconst twoDaysBlogs = blogData.filter(blogItem => {\n    // Each blogItem has a json property containing the blog data\n    const blog = blogItem.json;\n    const blogDate = new Date(blog.isoDate);\n    return blogDate >= startOfYesterday && blogDate <= endOfToday;\n});\n\nreturn twoDaysBlogs;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1984,
+        1040
+      ],
+      "id": "144e7621-d3b2-4bf7-af6b-525305d4dab0",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const blogData = items; // items is already the array of blog posts\n\n// Get date range for the last two days (yesterday and today)\nconst today = new Date();\nconst yesterday = new Date(today);\nyesterday.setDate(today.getDate() - 0);\n\n// Start from beginning of yesterday\nconst startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());\n// End at end of today\nconst endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);\n\n// Filter and return blogs from the last two days in the same format as input\nconst twoDaysBlogs = blogData.filter(blogItem => {\n    // Each blogItem has a json property containing the blog data\n    const blog = blogItem.json;\n    const blogDate = new Date(blog.isoDate);\n    return blogDate >= startOfYesterday && blogDate <= endOfToday;\n});\n\nreturn twoDaysBlogs;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1984,
+        1248
+      ],
+      "id": "a2873122-b640-4457-a6f8-79828d999b09",
+      "name": "Code3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1008,
+        464
+      ],
+      "id": "3ae3df74-613f-4725-80dd-948c82a9f759",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "sendTo": "igourramenmarwane@gmail.com",
+        "subject": "report cve",
+        "message": "={{ $json.html_report }}",
+        "options": {
+          "ccList": "achraf.rahime@dxc.com,younes.es-setti@dxc.com"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1616,
+        176
+      ],
+      "id": "d53e9723-a8c5-45e9-be58-86503d031608",
+      "name": "Send a message",
+      "webhookId": "8929e892-5005-4bdc-b618-f3c6229c456a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "veBLKIuBMcQSomUj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:9200/_bulk",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/x-ndjson"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/x-ndjson",
+        "body": "={{$json.bulkData}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1632,
+        432
+      ],
+      "id": "abe817e0-dfee-4b9c-92ac-38dba762c377",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "HpWG5XZa8r3L5tcN",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code Node - Transform to Elasticsearch bulk format\nconst inputData = $json;\nconst bulkData = [];\n\nfor (const cve of inputData.combined_cves) {\n  // Composite ID using cve_id + last_modified\n  const docId = `${cve.cve_id}_${cve.last_modified}`;\n\n  // Add the index action\n  bulkData.push({\n    index: {\n      _index: \"cve-data\",\n      _id: docId\n    }\n  });\n\n  // Add the document\n  bulkData.push({\n    cve_id: cve.cve_id,\n    priority_score: cve.priority_score,\n    title: cve.title,\n    summary: cve.summary,\n    published_date: cve.published_date,\n    last_modified: cve.last_modified,\n    affected_products: cve.affected_products,\n    risk_level: cve.risk_level,\n    ingestion_timestamp: new Date().toISOString(),\n  });\n}\n\n// Convert to NDJSON format\nconst ndjson = bulkData.map(item => JSON.stringify(item)).join('\\n') + '\\n';\n\nreturn [{ json: { bulkData: ndjson } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        432
+      ],
+      "id": "31bab4d1-6531-4098-84da-e7aec9c8c552",
+      "name": "prepare cve for db"
+    },
+    {
+      "parameters": {
+        "jsCode": "// N8N Node.js Code to Display Both CVE and Security Bulletins in HTML - WORKING VERSION\n\n// Input data from n8n\nconst inputData = $input.all(); // n8n syntax to get all input data\n\n// Debug: Log input structure\nconsole.log('Debug: Input data type:', typeof inputData);\nconsole.log('Debug: Input data is array:', Array.isArray(inputData));\nconsole.log('Debug: Input data length:', inputData?.length);\n\n// Initialize data containers\nlet cveData = null;\nlet bulletinData = null;\n\n// Extract data based on discovered structure: inputData[1].json contains bulletin data\nif (Array.isArray(inputData) && inputData.length >= 2) {\n  console.log('Debug: Processing n8n array input with json properties...');\n  \n  // CVE data is typically in inputData[0].json\n  if (inputData[0] && inputData[0].json && inputData[0].json.combined_cves) {\n    console.log('Debug: ✅ Found CVE data in inputData[0].json');\n    console.log('Debug: Number of CVEs:', inputData[0].json.combined_cves.length);\n    cveData = inputData[0].json;\n  }\n  \n  // Bulletin data is in inputData[1].json (discovered from debug)\n  if (inputData[1] && inputData[1].json && inputData[1].json.analyzed_bulletins) {\n    console.log('Debug: ✅ Found bulletin data in inputData[1].json');\n    console.log('Debug: Number of bulletins:', inputData[1].json.analyzed_bulletins.length);\n    bulletinData = inputData[1].json;\n  }\n} else {\n  console.log('Debug: Unexpected input format - expected array with 2+ items');\n}\n\nconsole.log('Debug: Final results:');\nconsole.log('Debug: CVE Data found:', !!cveData);\nconsole.log('Debug: Bulletin Data found:', !!bulletinData);\nif (cveData) {\n  console.log('Debug: Number of CVEs:', cveData.combined_cves?.length || 0);\n}\nif (bulletinData) {\n  console.log('Debug: Number of bulletins:', bulletinData.analyzed_bulletins?.length || 0);\n}\n\n// Function to generate risk level color\nfunction getRiskColor(riskLevel) {\n  if (!riskLevel) return '#6c757d';\n  const levelLower = riskLevel.toLowerCase();\n  const colors = {\n    'critical': '#dc3545',\n    'critique': '#dc3545',\n    'high': '#fd7e14',\n    'élevé': '#fd7e14',\n    'important': '#fd7e14',\n    'medium': '#ffc107',\n    'moyen': '#ffc107',\n    'low': '#28a745',\n    'faible': '#28a745'\n  };\n  return colors[levelLower] || '#6c757d';\n}\n\n// Function to get risk level priority for sorting\nfunction getRiskPriority(riskLevel) {\n  if (!riskLevel) return 0;\n  const levelLower = riskLevel.toLowerCase();\n  const priorities = {\n    'critical': 4,\n    'critique': 4,\n    'high': 3,\n    'élevé': 3,\n    'important': 3,\n    'medium': 2,\n    'moyen': 2,\n    'low': 1,\n    'faible': 1\n  };\n  return priorities[levelLower] || 0;\n}\n\n// Function to get Priority color based on score\nfunction getPriorityColor(score) {\n  if (score >= 90) return '#dc3545'; // Critical - Red\n  if (score >= 70) return '#fd7e14'; // High - Orange\n  if (score >= 40) return '#ffc107'; // Medium - Yellow\n  if (score >= 10) return '#28a745'; // Low - Green\n  return '#6c757d'; // None/Unknown - Gray\n}\n\n// Function to format date\nfunction formatDate(dateString) {\n  try {\n    const date = new Date(dateString);\n    return date.toLocaleDateString('en-US', {\n      year: 'numeric',\n      month: 'short',\n      day: 'numeric'\n    });\n  } catch (e) {\n    return dateString || 'N/A';\n  }\n}\n\n// Function to filter blogs/bulletins from today and yesterday\nfunction getBlogsFromTodayAndYesterday(bulletins) {\n  const now = new Date();\n  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());\n  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);\n  \n  console.log('Debug: Filtering bulletins for dates:', yesterday.toDateString(), 'and', today.toDateString());\n  console.log('Debug: Total bulletins to filter:', bulletins.length);\n  \n  return bulletins.filter(bulletin => {\n    // Handle both 'date' and 'Date' field names\n    const dateField = bulletin.date || bulletin.Date;\n    if (!dateField) {\n      console.log('Debug: Bulletin has no date field:', bulletin.Titre || bulletin.title || 'Unknown');\n      return false;\n    }\n    \n    const bulletinDate = new Date(dateField);\n    if (isNaN(bulletinDate.getTime())) {\n      console.log('Debug: Invalid date format:', dateField);\n      return false;\n    }\n    \n    const bulletinDateOnly = new Date(bulletinDate.getFullYear(), bulletinDate.getMonth(), bulletinDate.getDate());\n    const isMatch = bulletinDateOnly.getTime() === yesterday.getTime() || bulletinDateOnly.getTime() === today.getTime();\n    \n    const bulletinTitle = bulletin.title || bulletin.Titre || 'Unknown';\n    if (isMatch) {\n      console.log('Debug: ✅ Including bulletin:', bulletinTitle, bulletinDate.toDateString());\n    } else {\n      console.log('Debug: ❌ Excluding bulletin:', bulletinTitle, bulletinDate.toDateString());\n    }\n    \n    return isMatch;\n  });\n}\n\n// Function to generate CVE section\nfunction generateCVESection(cveDataObj) {\n  console.log('Debug: Entering generateCVESection');\n  \n  if (!cveDataObj || !cveDataObj.combined_cves || !Array.isArray(cveDataObj.combined_cves)) {\n    console.log('Debug: No valid CVE data structure found');\n    return '';\n  }\n  \n  const cves = cveDataObj.combined_cves;\n  console.log('Debug: CVEs found, length:', cves.length);\n  \n  // Calculate statistics\n  const stats = {\n    critical: cves.filter(cve => cve.risk_level?.toLowerCase() === 'critical').length,\n    high: cves.filter(cve => cve.risk_level?.toLowerCase() === 'high').length,\n    medium: cves.filter(cve => cve.risk_level?.toLowerCase() === 'medium').length,\n    low: cves.filter(cve => cve.risk_level?.toLowerCase() === 'low').length\n  };\n\n  let cveHtml = `\n    <div class=\"section\">\n      <h2>🔴 CVE Security Report</h2>\n      <div class=\"stats\">\n        <div class=\"stat-card critical\">\n          <h3>${stats.critical}</h3>\n          <p>Critical</p>\n        </div>\n        <div class=\"stat-card high\">\n          <h3>${stats.high}</h3>\n          <p>High</p>\n        </div>\n        <div class=\"stat-card medium\">\n          <h3>${stats.medium}</h3>\n          <p>Medium</p>\n        </div>\n        <div class=\"stat-card low\">\n          <h3>${stats.low}</h3>\n          <p>Low</p>\n        </div>\n        <div class=\"stat-card total\">\n          <h3>${cves.length}</h3>\n          <p>Total CVEs</p>\n        </div>\n      </div>\n      <div class=\"cve-list\">\n  `;\n\n  // Sort CVEs by priority score (highest first) - show all CVEs\n  const sortedCVEs = cves.sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0));\n\n  sortedCVEs.forEach((cve, index) => {\n    console.log(`Debug: Processing CVE ${index + 1}: ${cve.cve_id}`);\n    cveHtml += `\n      <div class=\"cve-card\">\n        <div class=\"cve-header\">\n          <span class=\"cve-id\">${cve.cve_id}</span>\n          <span class=\"cvss-badge\" style=\"background-color: ${getPriorityColor(cve.priority_score)}\">\n            Priority: ${cve.priority_score || 'N/A'}\n          </span>\n          <span class=\"risk-badge\" style=\"background-color: ${getRiskColor(cve.risk_level)}\">\n            ${cve.risk_level || 'Unknown'}\n          </span>\n        </div>\n        <h3 class=\"cve-title\">${cve.title || 'No Title Available'}</h3>\n        <p class=\"cve-summary\">${cve.summary || 'No summary available'}</p>\n        <div class=\"cve-details\">\n          <div class=\"detail-section\">\n            <strong>Published:</strong> ${formatDate(cve.published_date)}\n          </div>\n          ${cve.affected_products && Array.isArray(cve.affected_products) && cve.affected_products.length > 0 ? `\n          <div class=\"detail-section\">\n            <strong>Affected Products:</strong>\n            <div class=\"products\">\n              ${cve.affected_products.slice(0, 5).map(product => `<span class=\"product-tag\">${product}</span>`).join('')}\n              ${cve.affected_products.length > 5 ? `<span class=\"product-tag\">+${cve.affected_products.length - 5} more</span>` : ''}\n            </div>\n          </div>\n          ` : ''}\n        </div>\n      </div>\n    `;\n  });\n\n  if (cves.length > 10) {\n    cveHtml += `<div class=\"more-items\">... and ${cves.length - 10} more CVEs</div>`;\n  }\n\n  cveHtml += `\n      </div>\n    </div>\n  `;\n\n  console.log('Debug: Generated CVE HTML section');\n  return cveHtml;\n}\n\n// Function to generate Security Bulletins section\nfunction generateBulletinsSection(bulletinDataObj) {\n  console.log('Debug: Entering generateBulletinsSection');\n\n  if (!bulletinDataObj || !bulletinDataObj.analyzed_bulletins || !Array.isArray(bulletinDataObj.analyzed_bulletins)) {\n    console.log('Debug: No valid bulletin data structure found');\n    return '';\n  }\n\n  const bulletins = bulletinDataObj.analyzed_bulletins;\n  console.log('Debug: Bulletins found, length:', bulletins.length);\n\n  // Sort bulletins by criticité (risk level) - highest priority first\n  bulletins.sort((a, b) => {\n    const priorityA = getRiskPriority(a.criticite);\n    const priorityB = getRiskPriority(b.criticite);\n    return priorityB - priorityA; // Descending order (Critical first)\n  });\n\n  let bulletinHtml = `\n    <div class=\"section\">\n      <h2>📋 Security Bulletins Report (Today & Yesterday)</h2>\n      <div class=\"stats\">\n        <div class=\"stat-card total\">\n          <h3>${bulletins.length}</h3>\n          <p>Filtered Bulletins</p>\n        </div>\n      </div>\n      <div class=\"bulletin-list\">\n  `;\n\n  bulletins.forEach((bulletin, index) => {\n    const bulletinTitle = bulletin.title || bulletin.Titre || 'No Title';\n    const bulletinDate = bulletin.date || bulletin.Date;\n    const bulletinLink = bulletin.link || bulletin.Link;\n\n    console.log(`Debug: Processing bulletin ${index + 1}: ${bulletinTitle}`);\n    bulletinHtml += `\n      <div class=\"bulletin-card\">\n        <div class=\"bulletin-header\">\n          ${bulletin.Source ? `<span class=\"source-badge\">${bulletin.Source}</span>` : ''}\n          <span class=\"risk-badge\" style=\"background-color: ${getRiskColor(bulletin.criticite)}\">\n            ${bulletin.criticite || 'Unknown'}\n          </span>\n          ${bulletin.type_menace ? `<span class=\"risk-score\">${bulletin.type_menace}</span>` : ''}\n        </div>\n        <h3 class=\"bulletin-title\">${bulletinTitle}</h3>\n        ${bulletin.resume ? `<p class=\"bulletin-summary\">${bulletin.resume}</p>` : ''}\n        <div class=\"bulletin-details\">\n          <div class=\"detail-section\">\n            <strong>Date:</strong> ${formatDate(bulletinDate)}\n          </div>\n          ${bulletin.secteurs_concernes && Array.isArray(bulletin.secteurs_concernes) && bulletin.secteurs_concernes.length > 0 ? `\n          <div class=\"detail-section\">\n            <strong>Affected Sectors:</strong>\n            <div class=\"sectors\">\n              ${bulletin.secteurs_concernes.map(sector => `<span class=\"sector-tag\">${sector}</span>`).join('')}\n            </div>\n          </div>\n          ` : ''}\n          ${bulletin.actions_recommandees && Array.isArray(bulletin.actions_recommandees) && bulletin.actions_recommandees.length > 0 ? `\n          <div class=\"detail-section\">\n            <strong>Recommended Actions:</strong>\n            <ul class=\"action-list\">\n              ${bulletin.actions_recommandees.map(action => `<li>${action}</li>`).join('')}\n            </ul>\n          </div>\n          ` : ''}\n          ${bulletin.urgence ? `\n          <div class=\"detail-section\">\n            <strong>Urgency:</strong> ${bulletin.urgence}\n          </div>\n          ` : ''}\n          ${bulletin.score_risque ? `\n          <div class=\"detail-section\">\n            <strong>Risk Score:</strong> ${bulletin.score_risque}\n          </div>\n          ` : ''}\n          ${bulletinLink ? `\n          <div class=\"detail-section\">\n            <a href=\"${bulletinLink}\" target=\"_blank\" class=\"source-link\">View Source</a>\n          </div>\n          ` : ''}\n        </div>\n      </div>\n    `;\n  });\n\n  bulletinHtml += `\n      </div>\n    </div>\n  `;\n\n  console.log('Debug: Generated Bulletin HTML section');\n  return bulletinHtml;\n}\n\n// Generate combined HTML report\nfunction generateCombinedHTMLReport(cveDataObj, bulletinDataObj) {\n  const currentDate = new Date().toLocaleDateString('en-US', {\n    weekday: 'long',\n    year: 'numeric',\n    month: 'long',\n    day: 'numeric'\n  });\n\n  // Generate sections\n  const cveSection = cveDataObj ? generateCVESection(cveDataObj) : '';\n  const bulletinSection = bulletinDataObj ? generateBulletinsSection(bulletinDataObj) : '';\n\n  // If no data at all, show message\n  if (!cveSection && !bulletinSection) {\n    return '<div class=\"no-data\">No security data available</div>';\n  }\n\n  return `\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Security Report - ${currentDate}</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            background-color: #f8f9fa;\n            color: #333;\n            line-height: 1.6;\n            margin: 0;\n            padding: 20px;\n        }\n        .container {\n            max-width: 1200px;\n            margin: 0 auto;\n        }\n        .header {\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            padding: 30px;\n            border-radius: 8px;\n            margin-bottom: 20px;\n            text-align: center;\n        }\n        .header h1 {\n            margin: 0;\n            font-size: 2.5rem;\n        }\n        .header p {\n            margin: 10px 0 0 0;\n            opacity: 0.9;\n        }\n        .section {\n            background: white;\n            margin-bottom: 20px;\n            border-radius: 8px;\n            box-shadow: 0 2px 10px rgba(0,0,0,0.1);\n        }\n        .section h2 {\n            background: #495057;\n            color: white;\n            padding: 15px;\n            margin: 0;\n            font-size: 1.5rem;\n            border-radius: 8px 8px 0 0;\n        }\n        .stats {\n            display: flex;\n            gap: 20px;\n            padding: 20px;\n            background: #f8f9fa;\n            flex-wrap: wrap;\n        }\n        .stat-card {\n            background: white;\n            padding: 15px;\n            border-radius: 8px;\n            text-align: center;\n            flex: 1;\n            min-width: 150px;\n            box-shadow: 0 2px 5px rgba(0,0,0,0.1);\n        }\n        .stat-card h3 {\n            font-size: 2rem;\n            margin-bottom: 10px;\n        }\n        .stat-card.critical h3 { color: #dc3545; }\n        .stat-card.high h3 { color: #fd7e14; }\n        .stat-card.medium h3 { color: #ffc107; }\n        .stat-card.low h3 { color: #28a745; }\n        .stat-card.total h3 { color: #667eea; }\n\n        .cve-list, .bulletin-list {\n            padding: 20px;\n        }\n        .cve-card, .bulletin-card {\n            background: #fff;\n            border: 1px solid #e9ecef;\n            border-radius: 8px;\n            margin-bottom: 20px;\n            padding: 20px;\n        }\n        .cve-card {\n            border-left: 4px solid #28a745;\n        }\n        .bulletin-card {\n            border-left: 4px solid #667eea;\n        }\n        .cve-header, .bulletin-header {\n            display: flex;\n            align-items: center;\n            gap: 10px;\n            margin-bottom: 15px;\n            flex-wrap: wrap;\n        }\n        .cve-id {\n            background: #28a745;\n            color: white;\n            padding: 5px 10px;\n            border-radius: 12px;\n            font-size: 0.85rem;\n            font-weight: bold;\n        }\n        .cvss-badge, .source-badge, .risk-badge, .risk-score {\n            padding: 5px 10px;\n            border-radius: 12px;\n            font-size: 0.85rem;\n            font-weight: bold;\n            color: white;\n            text-transform: uppercase;\n            letter-spacing: 0.5px;\n        }\n        .source-badge {\n            background: #6f42c1;\n        }\n        .risk-score {\n            background: #17a2b8;\n        }\n\n        /* Enhanced risk badge styling */\n        .risk-badge {\n            box-shadow: 0 2px 4px rgba(0,0,0,0.2);\n            border: 1px solid rgba(255,255,255,0.2);\n        }\n\n        /* Priority badge styling */\n        .cvss-badge {\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            box-shadow: 0 2px 4px rgba(0,0,0,0.2);\n        }\n        .cve-title, .bulletin-title {\n            color: #2c3e50;\n            margin-bottom: 10px;\n            font-size: 1.2rem;\n        }\n        .cve-summary, .bulletin-summary {\n            color: #555;\n            margin-bottom: 15px;\n        }\n        .cve-details, .bulletin-details {\n            border-top: 1px solid #e9ecef;\n            padding-top: 15px;\n        }\n        .detail-section {\n            margin-bottom: 10px;\n        }\n        .detail-section strong {\n            display: inline-block;\n            min-width: 120px;\n        }\n        .products, .sectors {\n            display: flex;\n            flex-wrap: wrap;\n            gap: 8px;\n            margin-top: 5px;\n        }\n        .product-tag, .sector-tag {\n            background: #e3f2fd;\n            color: #1976d2;\n            padding: 4px 8px;\n            border-radius: 10px;\n            font-size: 0.8rem;\n        }\n        .action-list {\n            padding-left: 20px;\n            margin-top: 10px;\n        }\n        .source-link {\n            display: inline-block;\n            background: #007bff;\n            color: white;\n            padding: 6px 12px;\n            text-decoration: none;\n            border-radius: 4px;\n            font-size: 0.9rem;\n        }\n        .source-link:hover {\n            background: #0056b3;\n        }\n        .more-items {\n            text-align: center;\n            padding: 20px;\n            color: #666;\n            font-style: italic;\n        }\n        .no-data {\n            text-align: center;\n            padding: 40px;\n            color: #666;\n        }\n        @media (max-width: 768px) {\n            .stats {\n                flex-direction: column;\n            }\n            .cve-header, .bulletin-header {\n                flex-direction: column;\n                align-items: flex-start;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>🛡️ Security Report</h1>\n            <p>CVE Vulnerabilities & Security Bulletins</p>\n            <p>Generated on ${currentDate}</p>\n        </div>\n        ${cveSection}\n        ${bulletinSection}\n    </div>\n</body>\n</html>\n  `;\n}\n\n// Main execution\ntry {\n  console.log('Debug: Starting main execution');\n\n  let combinedReport = null;\n  let filteredBulletins = [];\n  let filteredBulletinData = null;\n\n  // Process bulletin data if it exists\n  if (bulletinData) {\n    console.log('Debug: ✅ Bulletin data found - processing');\n    console.log('Debug: Original bulletin count:', bulletinData.analyzed_bulletins?.length || 0);\n\n    // Filter bulletins for today and yesterday\n    if (bulletinData.analyzed_bulletins && Array.isArray(bulletinData.analyzed_bulletins)) {\n      filteredBulletins = getBlogsFromTodayAndYesterday(bulletinData.analyzed_bulletins);\n      console.log('Debug: Filtered bulletins count:', filteredBulletins.length);\n\n      // Create filtered bulletin data object\n      filteredBulletinData = {\n        ...bulletinData,\n        analyzed_bulletins: filteredBulletins\n      };\n    }\n  } else {\n    console.log('Debug: ❌ No bulletin data found in input');\n  }\n\n  // Generate combined report with both CVE and bulletin data\n  console.log('Debug: ✅ Generating combined CVE and Bulletin report');\n  combinedReport = generateCombinedHTMLReport(cveData, filteredBulletinData);\n  console.log('Debug: ✅ Combined HTML report generated successfully');\n\n  console.log('Debug: Report generation completed');\n\n  // Return the combined report\n  return {\n    json: {\n      success: true,\n      generated_at: new Date().toISOString(),\n      cve_report_available: !!cveData,\n      bulletin_report_available: !!filteredBulletinData,\n      filtered_bulletins_count: filteredBulletins.length,\n      total_bulletins: bulletinData?.analyzed_bulletins?.length || 0,\n      total_cves: cveData?.combined_cves?.length || 0,\n      html_report: combinedReport,\n      report_title: `Security_Report_${new Date().toISOString().split('T')[0]}`\n    }\n  };\n\n} catch (error) {\n  console.error('Error generating reports:', error);\n  return {\n    json: {\n      success: false,\n      error: error.message,\n      generated_at: new Date().toISOString()\n    }\n  };\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        176
+      ],
+      "id": "d6109e8a-0a9b-477d-91b2-577afa60b461",
+      "name": "prepare full report for email"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:9200/_bulk",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/x-ndjson"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/x-ndjson",
+        "body": "={{$json.bulkData}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1632,
+        624
+      ],
+      "id": "18b3dac2-0232-4e40-86b1-541e4c5d4074",
+      "name": "HTTP Request2",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "HpWG5XZa8r3L5tcN",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code Node - Transform analyzed_bulletins into Elasticsearch bulk NDJSON\n\n// Get all inputs (CVE + Bulletins usually come as array in n8n)\nconst inputData = $input.all();\n\nlet bulletinData = null;\n\n// Find bulletin data inside inputData (usually at index 1)\nif (Array.isArray(inputData) && inputData.length >= 2) {\n  if (inputData[1] && inputData[1].json && inputData[1].json.analyzed_bulletins) {\n    bulletinData = inputData[1].json;\n  }\n}\n\n// Prepare bulk payload\nconst bulkData = [];\n\nif (bulletinData && Array.isArray(bulletinData.analyzed_bulletins)) {\n  for (const bulletin of bulletinData.analyzed_bulletins) {\n    // Build unique doc ID from Source + Date + Titre\n    const docId = `${bulletin.Source}_${bulletin.Date}_${bulletin.Titre}`.replace(/\\s+/g, \"_\");\n\n    // Action line\n    bulkData.push({\n      index: {\n        _index: \"blogs\",\n        _id: docId\n      }\n    });\n\n    // Document body\n    bulkData.push({\n      source: bulletin.Source,\n      titre: bulletin.Titre,\n      date: bulletin.Date,\n      contenu: bulletin.Contenu,\n      link: bulletin.Link,\n      criticite: bulletin.criticite,\n      type_menace: bulletin.type_menace,\n      resume: bulletin.resume,\n      secteurs_concernes: bulletin.secteurs_concernes || bulletin.secteurs_concerns || [],\n      actions_recommandees: bulletin.actions_recommandees || [],\n      urgence: bulletin.urgence,\n      score_risque: bulletin.score_risque,\n      systemes_affectes: bulletin[\"systemes affectes\"] || bulletin[\"systemes affectés\"] || bulletin[\"systemes affecte\"] || [],\n      identificateur_externes: bulletin[\"identificateur externes\"] || bulletin[\"identificateur_externes\"] || [],\n      risques: bulletin.risques,\n      ingestion_timestamp: new Date().toISOString(),\n    });\n  }\n}\n\n// Convert to NDJSON\nconst ndjson = bulkData.length > 0 \n  ? bulkData.map(item => JSON.stringify(item)).join('\\n') + '\\n'\n  : '';\n\nreturn [{ json: { bulkData: ndjson } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        624
+      ],
+      "id": "27f33dc2-b290-4796-b0dc-29fc9c3762ba",
+      "name": "prepare blogs for db"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Time Range",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Time Range": {
+      "main": [
+        [
+          {
+            "node": "Fetch NVD CVEs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch VulDB Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch CVEFind Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch OpenCVE Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS CERT-FR",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS BleepingComputer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS SecureList",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch NVD CVEs": {
+      "main": [
+        [
+          {
+            "node": "Process NVD Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch VulDB Data": {
+      "main": [
+        [
+          {
+            "node": "Process VulDB Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch CVEFind Data": {
+      "main": [
+        [
+          {
+            "node": "Process CVEFind Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch OpenCVE Data": {
+      "main": [
+        [
+          {
+            "node": "Process OpenCVE Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process NVD Data": {
+      "main": [
+        [
+          {
+            "node": "Merge with VulDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process VulDB Data": {
+      "main": [
+        [
+          {
+            "node": "Merge with VulDB",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Process CVEFind Data": {
+      "main": [
+        [
+          {
+            "node": "Merge with CVEFind",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Process OpenCVE Data": {
+      "main": [
+        [
+          {
+            "node": "Merge with OpenCVE",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge with VulDB": {
+      "main": [
+        [
+          {
+            "node": "Merge with CVEFind",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge with CVEFind": {
+      "main": [
+        [
+          {
+            "node": "Merge with OpenCVE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge with OpenCVE": {
+      "main": [
+        [
+          {
+            "node": "Create Final Structure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Final Structure": {
+      "main": [
+        [
+          {
+            "node": "get all cve filtered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get all cve filtered": {
+      "main": [
+        [
+          {
+            "node": "get priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get priority": {
+      "main": [
+        [
+          {
+            "node": "remove low",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "get json from llm message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "combined llm answer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "prepare message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "remove low": {
+      "main": [
+        [
+          {
+            "node": "batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "batch": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "combined llm answer": {
+      "main": [
+        [
+          {
+            "node": "change json to html",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "change json to html": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prepare message": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get json from llm message": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron - every 3h": {
+      "main": [
+        [
+          {
+            "node": "Set Time Range",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS CERT-FR": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structurer Données": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS BleepingComputer": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS SecureList": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Sources": {
+      "main": [
+        [
+          {
+            "node": "Merge Sources1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "detect doublons": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Bulletins",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Sources1": {
+      "main": [
+        [
+          {
+            "node": "Structurer Données",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "detect doublons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Bulletins": {
+      "main": [
+        [
+          {
+            "node": "Combine All Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract LLM Response": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Bulletins",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Results": {
+      "main": [
+        [
+          {
+            "node": "Generate HTML Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Groq Résumé & Classification1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Extract LLM Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate HTML Report": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML string to base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML string to base64": {
+      "main": [
+        [
+          {
+            "node": "Save Final JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Merge Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Merge Sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Merge Sources1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "prepare cve for db",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "prepare full report for email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "prepare blogs for db",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prepare cve for db": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prepare full report for email": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prepare blogs for db": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "12854607-d9b6-4e20-ae6f-efe3d27cc27f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "182dbba5b88bd3d3410632cba9403382cbec7039d764b378dd347bfeadec4aee"
+  },
+  "id": "zVRLujO1ZW7Fb2Ta",
+  "tags": []
+}

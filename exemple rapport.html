@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Report - Friday, August 29, 2025</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: white;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            background: #495057;
+            color: white;
+            padding: 15px;
+            margin: 0;
+            font-size: 1.5rem;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-card.critical h3 {
+            color: #dc3545;
+        }
+
+        .stat-card.high h3 {
+            color: #fd7e14;
+        }
+
+        .stat-card.medium h3 {
+            color: #ffc107;
+        }
+
+        .stat-card.low h3 {
+            color: #28a745;
+        }
+
+        .stat-card.total h3 {
+            color: #667eea;
+        }
+
+        .cve-list,
+        .bulletin-list {
+            padding: 20px;
+        }
+
+        .cve-card,
+        .bulletin-card {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+
+        .cve-card {
+            border-left: 4px solid #28a745;
+        }
+
+        .bulletin-card {
+            border-left: 4px solid #667eea;
+        }
+
+        .cve-header,
+        .bulletin-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .cve-id {
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .cvss-badge,
+        .source-badge,
+        .risk-badge,
+        .risk-score {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .source-badge {
+            background: #6f42c1;
+        }
+
+        .risk-score {
+            background: #17a2b8;
+        }
+
+        /* Enhanced risk badge styling */
+        .risk-badge {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Priority badge styling */
+        .cvss-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .cve-title,
+        .bulletin-title {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .cve-summary,
+        .bulletin-summary {
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .cve-details,
+        .bulletin-details {
+            border-top: 1px solid #e9ecef;
+            padding-top: 15px;
+        }
+
+        .detail-section {
+            margin-bottom: 10px;
+        }
+
+        .detail-section strong {
+            display: inline-block;
+            min-width: 120px;
+        }
+
+        .products,
+        .sectors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .product-tag,
+        .sector-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        .action-list {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .source-link {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 6px 12px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .source-link:hover {
+            background: #0056b3;
+        }
+
+        .more-items {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                flex-direction: column;
+            }
+
+            .cve-header,
+            .bulletin-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Security Report</h1>
+            <p>CVE Vulnerabilities & Security Bulletins</p>
+            <p>Generated on Friday, August 29, 2025</p>
+        </div>
+        <div class="section">
+            <h2>🔴 CVE Security Report</h2>
+            <div class="stats">
+                <div class="stat-card critical">
+                    <h3>3</h3>
+                    <p>Critical</p>
+                </div>
+                <div class="stat-card high">
+                    <h3>2</h3>
+                    <p>High</p>
+                </div>
+                <div class="stat-card medium">
+                    <h3>0</h3>
+                    <p>Medium</p>
+                </div>
+                <div class="stat-card low">
+                    <h3>0</h3>
+                    <p>Low</p>
+                </div>
+                <div class="stat-card total">
+                    <h3>5</h3>
+                    <p>Total CVEs</p>
+                </div>
+            </div>
+            <div class="cve-list">
+                <div class="cve-card">
+                    <div class="cve-header"> <span class="cve-id">CVE-2025-25737</span> <span class="cvss-badge"
+                            style="background-color: #dc3545"> Priority: 90 </span> <span class="risk-badge"
+                            style="background-color: #dc3545"> CRITICAL </span> </div>
+                    <h3 class="cve-title">Weak BIOS Password Requirements in Kapsch TrafficCom RSUs</h3>
+                    <p class="cve-summary">Kapsch TrafficCom RIS-9160 & RIS-9260 Roadside Units have weak BIOS
+                        password requirements, allowing attackers to bypass authentication via bruteforce.</p>
+                    <div class="cve-details">
+                        <div class="detail-section"> <strong>Published:</strong> Aug 26, 2025 </div>
+                        <div class="detail-section"> <strong>Affected Products:</strong>
+                            <div class="products"> <span class="product-tag">Kapsch TrafficCom RIS-9160</span><span
+                                    class="product-tag">Kapsch TrafficCom RIS-9260</span> </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cve-card">
+                    <div class="cve-header"> <span class="cve-id">CVE-2025-9491</span> <span class="cvss-badge"
+                            style="background-color: #dc3545"> Priority: 90 </span> <span class="risk-badge"
+                            style="background-color: #dc3545"> CRITICAL </span> </div>
+                    <h3 class="cve-title">Microsoft Windows LNK File UI Misrepresentation Remote Code Execution</h3>
+                    <p class="cve-summary">Microsoft Windows LNK File handling vulnerability allows remote attackers
+                        to execute arbitrary code via crafted .LNK files.</p>
+                    <div class="cve-details">
+                        <div class="detail-section"> <strong>Published:</strong> Aug 26, 2025 </div>
+                        <div class="detail-section"> <strong>Affected Products:</strong>
+                            <div class="products"> <span class="product-tag">Microsoft Windows</span> </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cve-card">
+                    <div class="cve-header"> <span class="cve-id">CVE-2025-1994</span> <span class="cvss-badge"
+                            style="background-color: #fd7e14"> Priority: 87 </span> <span class="risk-badge"
+                            style="background-color: #dc3545"> CRITICAL </span> </div>
+                    <h3 class="cve-title">IBM Cognos Command Center Unsafe BinaryFormatter Use</h3>
+                    <p class="cve-summary">IBM Cognos Command Center uses unsafe BinaryFormatter, allowing local users
+                        to execute arbitrary code.</p>
+                    <div class="cve-details">
+                        <div class="detail-section"> <strong>Published:</strong> Aug 26, 2025 </div>
+                        <div class="detail-section"> <strong>Affected Products:</strong>
+                            <div class="products"> <span class="product-tag">IBM Cognos Command Center</span> </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cve-card">
+                    <div class="cve-header"> <span class="cve-id">CVE-2025-9605</span> <span class="cvss-badge"
+                            style="background-color: #fd7e14"> Priority: 78 </span> <span class="risk-badge"
+                            style="background-color: #fd7e14"> HIGH </span> </div>
+                    <h3 class="cve-title">Tenda AC21 and AC23 Stack-Based Buffer Overflow</h3>
+                    <p class="cve-summary">Tenda AC21 and AC23 have a stack-based buffer overflow vulnerability in the
+                        GetParentControlInfo function.</p>
+                    <div class="cve-details">
+                        <div class="detail-section"> <strong>Published:</strong> Aug 29, 2025 </div>
+                        <div class="detail-section"> <strong>Affected Products:</strong>
+                            <div class="products"> <span class="product-tag">Tenda AC21</span><span
+                                    class="product-tag">Tenda AC23</span> </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cve-card">
+                    <div class="cve-header"> <span class="cve-id">CVE-2025-55298</span> <span class="cvss-badge"
+                            style="background-color: #fd7e14"> Priority: 78 </span> <span class="risk-badge"
+                            style="background-color: #fd7e14"> HIGH </span> </div>
+                    <h3 class="cve-title">ImageMagick Format String Bug Vulnerability</h3>
+                    <p class="cve-summary">ImageMagick has a format string bug vulnerability in
+                        InterpretImageFilename, allowing attackers to overwrite memory regions.</p>
+                    <div class="cve-details">
+                        <div class="detail-section"> <strong>Published:</strong> Aug 26, 2025 </div>
+                        <div class="detail-section"> <strong>Affected Products:</strong>
+                            <div class="products"> <span class="product-tag">ImageMagick</span> </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="more-items">Showing top 5 CVEs for demo purposes</div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>📋 Security Bulletins Report (Today & Yesterday)</h2>
+            <div class="stats">
+                <div class="stat-card total">
+                    <h3>5</h3>
+                    <p>Filtered Bulletins</p>
+                </div>
+            </div>
+            <div class="bulletin-list">
+                <div class="bulletin-card">
+                    <div class="bulletin-header"> <span class="source-badge">CERT-FR</span> <span
+                            class="risk-badge" style="background-color: #dc3545"> Critique </span> <span
+                            class="risk-score">Vulnérabilité critique</span> </div>
+                    <h3 class="bulletin-title">Multiples vulnérabilités dans les produits Elastic</h3>
+                    <p class="bulletin-summary">Des vulnérabilités critiques ont été découvertes dans les produits
+                        Elastic, permettant une exécution de code arbitraire à distance, une élévation de privilèges et
+                        une atteinte à la confidentialité des données.</p>
+                    <div class="bulletin-details">
+                        <div class="detail-section"> <strong>Date:</strong> Aug 29, 2025 </div>
+                        <div class="detail-section"> <strong>Affected Sectors:</strong>
+                            <div class="sectors"> <span class="sector-tag">gouvernement</span><span
+                                    class="sector-tag">finance</span><span class="sector-tag">santé</span> </div>
+                        </div>
+                        <div class="detail-section"> <strong>Urgency:</strong> Immédiat </div>
+                        <div class="detail-section"> <strong>Risk Score:</strong> 9.5 </div>
+                        <div class="detail-section"> <a
+                                href="https://www.cert.ssi.gouv.fr/avis/CERTFR-2025-AVI-0738/" target="_blank"
+                                class="source-link">View Source</a> </div>
+                    </div>
+                </div>
+                <div class="bulletin-card">
+                    <div class="bulletin-header"> <span class="source-badge">CERT-FR</span> <span
+                            class="risk-badge" style="background-color: #dc3545"> Critique </span> <span
+                            class="risk-score">Vulnérabilité critique</span> </div>
+                    <h3 class="bulletin-title">Multiples vulnérabilités dans le noyau Linux de Red Hat</h3>
+                    <p class="bulletin-summary">Des vulnérabilités critiques ont été découvertes dans le noyau Linux
+                        de Red Hat, permettant une exécution de code arbitraire et une élévation de privilèges.</p>
+                    <div class="bulletin-details">
+                        <div class="detail-section"> <strong>Date:</strong> Aug 29, 2025 </div>
+                        <div class="detail-section"> <strong>Affected Sectors:</strong>
+                            <div class="sectors"> <span class="sector-tag">gouvernement</span><span
+                                    class="sector-tag">finance</span><span class="sector-tag">santé</span> </div>
+                        </div>
+                        <div class="detail-section"> <strong>Urgency:</strong> Immédiat </div>
+                        <div class="detail-section"> <strong>Risk Score:</strong> 9.0 </div>
+                        <div class="detail-section"> <a
+                                href="https://www.cert.ssi.gouv.fr/avis/CERTFR-2025-AVI-0744/" target="_blank"
+                                class="source-link">View Source</a> </div>
+                    </div>
+                </div>
+                <div class="bulletin-card">
+                    <div class="bulletin-header"> <span class="source-badge">CERT-FR</span> <span
+                            class="risk-badge" style="background-color: #fd7e14"> Élevé </span> <span
+                            class="risk-score">Vulnérabilité critique</span> </div>
+                    <h3 class="bulletin-title">Vulnérabilité dans Microsoft Edge</h3>
+                    <p class="bulletin-summary">Une vulnérabilité a été découverte dans Microsoft Edge, ce qui
+                        pourrait permettre à un attaquant d'exécuter du code arbitraire.</p>
+                    <div class="bulletin-details">
+                        <div class="detail-section"> <strong>Date:</strong> Aug 29, 2025 </div>
+                        <div class="detail-section"> <strong>Affected Sectors:</strong>
+                            <div class="sectors"> <span class="sector-tag">gouvernement</span><span
+                                    class="sector-tag">finance</span><span class="sector-tag">santé</span> </div>
+                        </div>
+                        <div class="detail-section"> <strong>Urgency:</strong> Élevé </div>
+                        <div class="detail-section"> <strong>Risk Score:</strong> 8.5 </div>
+                        <div class="detail-section"> <a
+                                href="https://www.cert.ssi.gouv.fr/avis/CERTFR-2025-AVI-0742/" target="_blank"
+                                class="source-link">View Source</a> </div>
+                    </div>
+                </div>
+                <div class="bulletin-card">
+                    <div class="bulletin-header"> <span class="source-badge">CERT-FR</span> <span
+                            class="risk-badge" style="background-color: #fd7e14"> Élevé </span> <span
+                            class="risk-score">Vulnérabilité critique</span> </div>
+                    <h3 class="bulletin-title">Multiples vulnérabilités dans les produits IBM</h3>
+                    <p class="bulletin-summary">Des vulnérabilités critiques ont été découvertes dans les produits
+                        IBM, permettant une exécution de code arbitraire et une élévation de privilèges.</p>
+                    <div class="bulletin-details">
+                        <div class="detail-section"> <strong>Date:</strong> Aug 29, 2025 </div>
+                        <div class="detail-section"> <strong>Affected Sectors:</strong>
+                            <div class="sectors"> <span class="sector-tag">gouvernement</span><span
+                                    class="sector-tag">finance</span><span class="sector-tag">santé</span> </div>
+                        </div>
+                        <div class="detail-section"> <strong>Urgency:</strong> Élevé </div>
+                        <div class="detail-section"> <strong>Risk Score:</strong> 8.0 </div>
+                        <div class="detail-section"> <a
+                                href="https://www.cert.ssi.gouv.fr/avis/CERTFR-2025-AVI-0746/" target="_blank"
+                                class="source-link">View Source</a> </div>
+                    </div>
+                </div>
+                <div class="bulletin-card">
+                    <div class="bulletin-header"> <span class="source-badge">CERT-FR</span> <span
+                            class="risk-badge" style="background-color: #fd7e14"> Élevé </span> <span
+                            class="risk-score">Vulnérabilité critique</span> </div>
+                    <h3 class="bulletin-title">Multiples vulnérabilités dans Asterisk</h3>
+                    <p class="bulletin-summary">Des vulnérabilités ont été découvertes dans Asterisk, un logiciel de
+                        téléphonie open source, permettant une exécution de code arbitraire.</p>
+                    <div class="bulletin-details">
+                        <div class="detail-section"> <strong>Date:</strong> Aug 29, 2025 </div>
+                        <div class="detail-section"> <strong>Affected Sectors:</strong>
+                            <div class="sectors"> <span class="sector-tag">télécommunications</span><span
+                                    class="sector-tag">entreprises</span> </div>
+                        </div>
+                        <div class="detail-section"> <strong>Urgency:</strong> Élevé </div>
+                        <div class="detail-section"> <strong>Risk Score:</strong> 7.5 </div>
+                        <div class="detail-section"> <a
+                                href="https://www.cert.ssi.gouv.fr/avis/CERTFR-2025-AVI-0739/" target="_blank"
+                                class="source-link">View Source</a> </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

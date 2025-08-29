@@ -1,0 +1,55 @@
+version: "3.8"
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - ELASTIC_PASSWORD=S66ozmKg0VedjHB8CJw9
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.3
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+      ELASTICSEARCH_USERNAME: "kibana_system"
+      ELASTICSEARCH_PASSWORD: "0jLBOmmfJBpEp8qcOeL4"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.15.3
+    container_name: logstash
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    depends_on:
+      - elasticsearch
+    environment:
+      ELASTIC_USERNAME: "logstash_system"
+      ELASTIC_PASSWORD: "7HttCuOEqjIiXJ058LI1"
+
+volumes:
+  esdata:
+    driver: local
+
+# kibana_admin
+# MyStrongPassword123
+
+# docker-compose up -d
+# docker exec -it elasticsearch /bin/bash
+# bin/elasticsearch-users useradd kibana_admin -p MyStrongPassword123 -r superuser
+# exit
+# docker-compose restart kibana
